@@ -1,7 +1,7 @@
 modules = ["nodejs-20"]
 [nix]
 channel = "stable-25_05"
-packages = ["unzip", "pyflyby", "tree", "pkg"]
+packages = ["unzip", "pyflyby", "tree", "pkg", "yakut"]
 
 [agent]
 expertMode = true

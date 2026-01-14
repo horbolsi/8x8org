@@ -14,12 +14,14 @@
     "cannon-es": "^0.20.0",
     "clsx": "^2.1.1",
     "ethers": "^6.16.0",
+    "express": "^5.2.1",
     "framer-motion": "^11.18.2",
     "gsap": "^3.13.0",
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.2.0",
     "lucide-react": "^0.533.0",
     "matter-js": "^0.20.0",
+    "node-cron": "^4.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^14.1.0",
@@ -44,5 +46,10 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~5.8.3",
     "vite": "^7.0.0"
-  }
+  },
+  "description": "A flexible, feature-rich React template designed for AI-generated websites with modern development tools and libraries.",
+  "main": "backup-server.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
