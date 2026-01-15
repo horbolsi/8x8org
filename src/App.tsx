@@ -127,15 +127,31 @@ function App() {
     }
   };
 
-  // Nuclear fix for blank screen: ignore session errors and just show dashboard
-  // Use a hardcoded session if one doesn't exist to ensure visibility
-  const activeSession = session || { user: { id: 'admin', email: 'admin@sovereign.ai' } };
-
-  return (
-    <DashboardLayout currentView={currentView} onNavigate={setCurrentView}>
-      {renderContent()}
-    </DashboardLayout>
-  );
+  // Ultra-robust render to prevent blank screens
+  try {
+    return (
+      <DashboardLayout currentView={currentView} onNavigate={setCurrentView}>
+        {renderContent()}
+      </DashboardLayout>
+    );
+  } catch (err) {
+    console.error("Critical Render Error:", err);
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-20 font-mono">
+        <h1 className="text-red-500 text-2xl mb-4">SYSTEM RECOVERY MODE</h1>
+        <p className="mb-4">A critical error occurred while rendering the dashboard.</p>
+        <pre className="bg-black p-4 rounded border border-red-500/30 overflow-auto max-w-full">
+          {err instanceof Error ? err.stack : String(err)}
+        </pre>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-8 px-6 py-2 bg-indigo-600 rounded hover:bg-indigo-500"
+        >
+          REBOOT SYSTEM
+        </button>
+      </div>
+    );
+  }
 }
 
 export default App;

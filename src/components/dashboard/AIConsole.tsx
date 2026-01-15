@@ -72,7 +72,7 @@ When responding:
 3. If asked to write code or modify files, provide the exact shell commands (e.g., cat > filename << 'EOF') so the user can execute them in the terminal.
 4. Always treat the user as the Ultimate Administrator.`;
 
-      if (activeProvider === 'aggregator') {
+      if (activeProvider as string === 'aggregator') {
         const providers = ['openai', 'deepseek', 'ollama'];
         const results = await Promise.all(providers.map(async p => {
           try {

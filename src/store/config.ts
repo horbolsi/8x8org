@@ -9,12 +9,12 @@ interface ConfigState {
     deepseek: string;
     ollama: string;
   };
-  activeProvider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'ollama' | 'simulation';
+  activeProvider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'ollama' | 'simulation' | 'aggregator' | 'claude' | 'xai';
   rpcUrl: string;
   theme: 'matrix' | 'cyber' | 'dark';
   username: string;
-  setApiKey: (provider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'ollama', key: string) => void;
-  setActiveProvider: (provider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'ollama' | 'simulation') => void;
+  setApiKey: (provider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'ollama' | 'claude' | 'xai', key: string) => void;
+  setActiveProvider: (provider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'ollama' | 'simulation' | 'aggregator' | 'claude' | 'xai') => void;
   setRpcUrl: (url: string) => void;
   setTheme: (theme: 'matrix' | 'cyber' | 'dark') => void;
   setUsername: (name: string) => void;

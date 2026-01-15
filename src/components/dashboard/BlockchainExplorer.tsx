@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Blocks, Link, Box, ArrowRight, Clock, Hash, Layers, RefreshCw } from 'lucide-react';
+import { LayoutGrid, Link, Box, ArrowRight, Clock, Hash, Layers, RefreshCw } from 'lucide-react';
 import { ethers } from 'ethers';
 import { useConfig } from '../../store/config';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,13 +62,13 @@ export function BlockchainExplorer() {
   return (
     <div className="glass-panel rounded-xl p-6 border border-white/10 relative overflow-hidden">
       <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-        <Blocks className="w-64 h-64 text-indigo-500" />
+        <LayoutGrid className="w-64 h-64 text-indigo-500" />
       </div>
 
       <div className="flex items-center justify-between mb-8 relative z-10">
         <div>
           <h3 className="font-bold text-white flex items-center gap-2 text-lg">
-            <Blocks className="w-5 h-5 text-indigo-400" />
+            <LayoutGrid className="w-5 h-5 text-indigo-400" />
             Blockchain Explorer
           </h3>
           <p className="text-xs text-gray-500 mt-1 font-mono">Live block feed from connected node</p>

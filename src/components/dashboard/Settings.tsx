@@ -45,11 +45,11 @@ export function Settings() {
           <div className="flex items-center gap-2 text-sm font-medium text-indigo-300 uppercase tracking-wider">
             <Bot size={14} /> Active Intelligence Core
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-            {(['openai', 'anthropic', 'gemini', 'deepseek', 'ollama', 'simulation'] as const).map((p) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {(['openai', 'anthropic', 'gemini', 'deepseek', 'ollama', 'simulation', 'aggregator', 'claude', 'xai'] as const).map((p) => (
               <button
                 key={p}
-                onClick={() => setActiveProvider(p)}
+                onClick={() => setActiveProvider(p as any)}
                 className={cn(
                   "px-2 py-2 rounded-lg border text-[10px] font-mono transition-all",
                   activeProvider === p 
