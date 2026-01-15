@@ -205,35 +205,7 @@ export function DashboardLayout({ children, currentView, onNavigate }: Dashboard
               transition={{ duration: 0.2 }}
               className="max-w-[1600px] mx-auto space-y-6"
             >
-              {currentView === 'dashboard' ? (
-                <>
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-fit">
-                    <div className="xl:col-span-2">
-                      <SystemMonitor />
-                    </div>
-                    <div>
-                      <BlockchainExplorer />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[600px]">
-                    <AIConsole />
-                    <div className="flex flex-col gap-6">
-                      <Terminal />
-                      <div className="flex-1 overflow-hidden">
-                        <FileExplorer />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div className="xl:col-span-2">
-                      <BotManager />
-                    </div>
-                    <Settings />
-                  </div>
-                </>
-              ) : children}
+              {children}
             </motion.div>
           </AnimatePresence>
         </div>

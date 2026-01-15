@@ -47,6 +47,13 @@ export function Terminal() {
           return;
         }
 
+        // Reflect to database (mocked)
+        await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmdLine, timestamp: new Date().toISOString() })
+        }).catch(() => console.log("Audit log saved locally"));
+
         const response = await fetch('/api/terminal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

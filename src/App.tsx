@@ -9,11 +9,7 @@ import { LogViewer } from './components/dashboard/LogViewer';
 import { BlockchainExplorer } from './components/dashboard/BlockchainExplorer';
 import { Terminal } from './components/dashboard/Terminal';
 import { Settings } from './components/dashboard/Settings';
-import { motion } from 'framer-motion';
-import { useConfig } from './store/config';
-import { client } from './lib/client';
-import { Login } from './components/auth/Login';
-import { Loader2 } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
