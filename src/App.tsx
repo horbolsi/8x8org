@@ -29,7 +29,9 @@ function App() {
     const initAuth = async () => {
       try {
         const { data } = await client.auth.getSession();
-        setSession(data.session);
+        if (data?.session) {
+          setSession(data.session);
+        }
       } catch (error) {
         console.error("Failed to get session:", error);
       } finally {
@@ -40,7 +42,9 @@ function App() {
     initAuth();
 
     const authListener = client.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session);
       setSession(session);
+      setLoading(false); // Ensure loading is off when session is set
     });
 
     return () => {

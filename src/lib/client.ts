@@ -4,10 +4,13 @@ export const client = {
   auth: {
     getSession: async () => ({ data: { session: { user: { id: 'admin', email: 'admin@sovereign.ai' } } }, error: null }),
     onAuthStateChange: (callback: any) => {
-      // Return a mock subscription
+      // Immediately trigger callback with mock session
+      setTimeout(() => {
+        callback('SIGNED_IN', { user: { id: 'admin', email: 'admin@sovereign.ai' } });
+      }, 0);
       return { data: { subscription: { unsubscribe: () => {} } } };
     },
-    signInWithPassword: async () => ({ data: { session: {} }, error: null }),
+    signInWithPassword: async () => ({ data: { session: { user: { id: 'admin' } } }, error: null }),
     signOut: async () => ({ error: null }),
   },
   storage: {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Terminal as TerminalIcon, Activity, Cpu, Shield, FolderOpen, Settings, Menu, Bell, ChevronRight, X, User as UserIcon, Zap, Blocks, Box, ScrollText } from 'lucide-react';
+import { Terminal as TerminalIcon, Activity, Cpu, Shield, FolderOpen, Settings, Menu, Bell, ChevronRight, X, User as UserIcon, Zap, LayoutGrid, Box, ScrollText } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useConfig } from '../../store/config';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -99,7 +99,7 @@ export function DashboardLayout({ children, currentView, onNavigate }: Dashboard
             
             <NavGroup title="Financial Tools">
               <NavItem icon={<Shield />} label="Crypto Tools" active={currentView === 'crypto'} onClick={() => { onNavigate('crypto'); if(isMobile) setSidebarOpen(false); }} />
-              <NavItem icon={<Blocks />} label="Blockchain" active={currentView === 'blockchain'} onClick={() => { onNavigate('blockchain'); if(isMobile) setSidebarOpen(false); }} />
+              <NavItem icon={<LayoutGrid />} label="Blockchain" active={currentView === 'blockchain'} onClick={() => { onNavigate('blockchain'); if(isMobile) setSidebarOpen(false); }} />
               <NavItem icon={<Box />} label="Terminal Emulator" active={currentView === 'terminal'} onClick={() => { onNavigate('terminal'); if(isMobile) setSidebarOpen(false); }} />
             </NavGroup>
             
