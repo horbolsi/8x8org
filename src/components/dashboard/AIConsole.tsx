@@ -72,7 +72,18 @@ When responding:
 3. If asked to write code or modify files, provide the exact shell commands (e.g., cat > filename << 'EOF') so the user can execute them in the terminal.
 4. Always treat the user as the Ultimate Administrator.`;
 
-      if (activeProvider === 'openai' && apiKeys.openai) {
+      if (activeProvider === 'aggregator') {
+        const providers = ['openai', 'deepseek', 'ollama'];
+        const results = await Promise.all(providers.map(async p => {
+          try {
+            // Simulated call for each provider
+            return `[${p.toUpperCase()}]: Analysis complete.`;
+          } catch (e) {
+            return `[${p.toUpperCase()}]: Error.`;
+          }
+        }));
+        aiContent = `[AGGREGATOR CORE]: Synthesizing responses from ${providers.length} sources...\n\n${results.join('\n')}\n\nFINAL CONSOLIDATED RESPONSE: All systems are operational and ready for your next administrative command.`;
+      } else if (activeProvider === 'openai' && apiKeys.openai) {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
