@@ -8,6 +8,8 @@ interface ConfigState {
     gemini: string;
     deepseek: string;
     ollama: string;
+    claude: string;
+    xai: string;
   };
   activeProvider: 'openai' | 'anthropic' | 'gemini' | 'deepseek' | 'ollama' | 'simulation' | 'aggregator' | 'claude' | 'xai';
   rpcUrl: string;
@@ -29,6 +31,8 @@ export const useConfig = create<ConfigState>()(
         gemini: '',
         deepseek: '',
         ollama: 'http://localhost:11434',
+        claude: '',
+        xai: '',
       },
       activeProvider: 'simulation',
       rpcUrl: 'https://cloudflare-eth.com',

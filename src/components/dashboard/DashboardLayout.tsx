@@ -106,6 +106,7 @@ export function DashboardLayout({ children, currentView, onNavigate }: Dashboard
             <NavGroup title="System Assets">
               <NavItem icon={<FolderOpen />} label="File Explorer" active={currentView === 'files'} onClick={() => { onNavigate('files'); if(isMobile) setSidebarOpen(false); }} />
               <NavItem icon={<ScrollText />} label="Protocol Logs" active={currentView === 'logs'} onClick={() => { onNavigate('logs'); if(isMobile) setSidebarOpen(false); }} />
+              <NavItem icon={<Shield />} label="Admin Console" active={currentView === 'admin'} onClick={() => { onNavigate('admin'); if(isMobile) setSidebarOpen(false); }} />
             </NavGroup>
           </nav>
 
