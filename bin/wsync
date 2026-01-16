@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 set -Eeuo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -8,15 +8,11 @@ FLAG_DIR="${TMPDIR:-$HOME/.cache}"
 mkdir -p "$FLAG_DIR"
 FLAG_FILE="$FLAG_DIR/wsync_stashed.flag"
 
-status_clean() { [[ -z "$(git status --porcelain)" ]]; }
+status_clean(){ [[ -z "$(git status --porcelain)" ]]; }
 
 auto_stash_begin() {
-  if status_clean; then
-    echo "✅ clean"
-    echo "0" > "$FLAG_FILE"
-    return 0
-  fi
-  echo "ℹ️ local changes detected → stashing for pull"
+  if status_clean; then echo "✅ clean"; echo "0" > "$FLAG_FILE"; return 0; fi
+  echo "ℹ️ stashing changes"
   git stash push -u -m "wsync auto-stash $(ts)" >/dev/null
   echo "1" > "$FLAG_FILE"
 }
@@ -24,74 +20,45 @@ auto_stash_begin() {
 auto_stash_end() {
   if [[ "$(cat "$FLAG_FILE" 2>/dev/null || echo 0)" == "1" ]]; then
     echo "ℹ️ restoring stash"
-    git stash pop >/dev/null || {
-      echo "⚠️ stash pop conflicts. Fix files, then:"
-      echo "  git add -A"
-      echo "  git rebase --continue  (or: git rebase --abort)"
-      exit 1
-    }
+    git stash pop >/dev/null || { echo "⚠️ stash pop conflict"; exit 1; }
   fi
 }
 
-cmd_pull() {
-  auto_stash_begin
-  git pull --rebase
-  auto_stash_end
-  git status --porcelain || true
+ensure_on_branch() {
+  git symbolic-ref -q HEAD >/dev/null 2>&1 || { echo "⚠️ DETACHED HEAD → run: bash bin/wsync rescue:main"; exit 2; }
 }
 
-cmd_push() {
+pull_cmd() {
+  auto_stash_begin
+  if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+    git pull --rebase
+  else
+    git pull --rebase origin main
+  fi
+  auto_stash_end
+}
+
+push_cmd() {
+  ensure_on_branch
   git add -A
   git commit -m "workspace sync $(ts)" >/dev/null 2>&1 || true
   git push
-  git status --porcelain || true
 }
 
-cmd_sync() { cmd_pull; cmd_push; }
-
-cmd_backup() {
-  local keep="${KEEP_BACKUPS:-72}"
-  echo "ℹ️ backup now (KEEP_BACKUPS=$keep)"
-  bash scripts/backup_workspace.sh
-}
-
-cmd_doctor() {
-  echo "--- wsync doctor ---"
-  echo "root: $(pwd)"
-  echo "branch: $(git rev-parse --abbrev-ref HEAD)"
-  echo "head: $(git rev-parse --short HEAD)  $(git log -1 --pretty=%s)"
-  echo
-  echo "--- remotes ---"
-  git remote -v
-  echo
-  echo "--- status ---"
-  git status --porcelain || true
-  echo
-  echo "--- cron ---"
-  crontab -l 2>/dev/null || echo "(no crontab)"
-}
-
-usage() {
-  cat <<'USAGE'
-Usage: bash bin/wsync <command>
-
-Core:
-  pull        Pull from GitHub (auto-stash)
-  push        Commit+push to GitHub
-  sync        pull then push
-  status      show status
-  backup      run backup now (uses scripts/backup_workspace.sh)
-  doctor      show repo + remote + cron diagnostics
-USAGE
+rescue_main() {
+  git fetch origin --prune
+  CURRENT="$(git rev-parse HEAD)"
+  git checkout -B main origin/main
+  git merge-base --is-ancestor "$CURRENT" HEAD >/dev/null 2>&1 || git cherry-pick "$CURRENT"
+  git log --oneline --decorate -5
 }
 
 case "${1:-}" in
-  pull) cmd_pull ;;
-  push) cmd_push ;;
-  sync) cmd_sync ;;
-  status) git status --porcelain ;;
-  backup) cmd_backup ;;
-  doctor) cmd_doctor ;;
-  -h|--help|"") usage ;;
-  *) echo "Unknown command: ${1:-}"; usage; exit 2 ;;
+  pull) pull_cmd ;;
+  push) push_cmd ;;
+  sync) pull_cmd; push_cmd ;;
+  backup) KEEP_BACKUPS="${KEEP_BACKUPS:-72}" bash scripts/backup_workspace.sh ;;
+  doctor) echo "root: $(pwd)"; echo "branch: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo DETACHED)"; git remote -v; git status --porcelain; crontab -l 2>/dev/null || echo "(no crontab)";;
+  rescue:main) rescue_main ;;
+  *) echo "Usage: bash bin/wsync {pull|push|sync|backup|doctor|rescue:main}"; exit 2;;
 esac

@@ -1,47 +1,47 @@
-# Secrets
-**/.env
-**/*token*
-**/*secret*
-**/*key*
-**/id_ed25519*
-**/known_hosts
+# ==========================
+# Workspace mirror ignores
+# ==========================
 
-# Python cache / venv
-**/__pycache__/
-**/*.pyc
-**/.venv/
-**/.venvs/
-
-# Node junk
-**/node_modules/
-
-# Runtime + logs (often huge/noisy)
-runtime/
-logs/
-**/*.log
-
-# Databases (you can remove these lines if you REALLY want to push DBs)
-**/*.db
-**/*.sqlite
-archive/_git_backup/
-_push_workspace.sh
-fix_workspace_repo_and_push.sh
 projects/
+logs/
+runtime/
+*.log
 
-# Replit-only
+*.db
+*.sqlite
+*.sqlite3
+
+.env
+.env.*
+**/*secret*
+**/*token*
+**/*key*
+!docs/**
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.envrc
+.pytest_cache/
+.mypy_cache/
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 .replit
 replit.nix
+.tools/
 
-# Backups
 *.bak.*
 *.backup
-# Backups/junk
-# Runtime + big dirs
+*.tmp
+*.swp
+*~
+
 archive/
-**/dist/
+!archive/README.md
 
-# Ignore archived cleanup snapshots inside repo
 repos/8x8org/archive/
-
-# Local toolchains
-.tools/
