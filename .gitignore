@@ -39,3 +39,9 @@ replit.nix
 # Runtime + big dirs
 archive/
 **/dist/
+
+# Ignore archived cleanup snapshots inside repo
+repos/8x8org/archive/
+
+# Local toolchains
+.tools/
