@@ -1,0 +1,29 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -Eeuo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+ts(){ date '+%Y-%m-%d %H:%M:%S'; }
+
+case "${1:-}" in
+  pull)
+    git pull --rebase
+    ;;
+  push)
+    git add -A
+    git commit -m "workspace sync $(ts)" >/dev/null 2>&1 || true
+    git push
+    ;;
+  sync)
+    git pull --rebase
+    git add -A
+    git commit -m "workspace sync $(ts)" >/dev/null 2>&1 || true
+    git push
+    ;;
+  status)
+    git status --porcelain
+    ;;
+  *)
+    echo "Usage: bash bin/wsync {pull|push|sync|status}"
+    exit 2
+    ;;
+esac

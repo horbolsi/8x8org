@@ -35,3 +35,7 @@ replit.nix
 # Backups
 *.bak.*
 *.backup
+# Backups/junk
+# Runtime + big dirs
+archive/
+**/dist/
