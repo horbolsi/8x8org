@@ -24,3 +24,6 @@ logs/
 **/*.db
 **/*.sqlite
 archive/_git_backup/
+_push_workspace.sh
+fix_workspace_repo_and_push.sh
+projects/
