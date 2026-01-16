@@ -5,6 +5,10 @@ cd "$(git rev-parse --show-toplevel)"
 
 ts(){ date '+%Y-%m-%d %H:%M:%S'; }
 
+FLAG_DIR="${TMPDIR:-$HOME/.cache}"
+mkdir -p "$FLAG_DIR"
+FLAG_FILE="$FLAG_DIR/wsync_stashed.flag"
+
 status_clean() {
   [[ -z "$(git status --porcelain)" ]]
 }
@@ -12,19 +16,21 @@ status_clean() {
 auto_stash_begin() {
   if status_clean; then
     echo "✅ clean"
-    echo "0" > /tmp/wsync_stashed 2>/dev/null || true
+    echo "0" > "$FLAG_FILE"
     return 0
   fi
   echo "ℹ️ local changes detected → stashing for pull"
   git stash push -u -m "wsync auto-stash $(ts)" >/dev/null
-  echo "1" > /tmp/wsync_stashed 2>/dev/null || true
+  echo "1" > "$FLAG_FILE"
 }
 
 auto_stash_end() {
-  if [[ "$(cat /tmp/wsync_stashed 2>/dev/null || echo 0)" == "1" ]]; then
+  if [[ "$(cat "$FLAG_FILE" 2>/dev/null || echo 0)" == "1" ]]; then
     echo "ℹ️ restoring stash"
     git stash pop >/dev/null || {
-      echo "⚠️ stash pop had conflicts. Resolve then run: git add -A && git rebase --continue OR git rebase --abort"
+      echo "⚠️ stash pop had conflicts. Resolve, then:"
+      echo "  git add -A"
+      echo "  git rebase --continue   (or: git rebase --abort)"
       exit 1
     }
   fi
@@ -57,9 +63,6 @@ Usage: bash bin/wsync <command>
   push     Add/commit/push to GitHub
   sync     pull then push
   status   show git status
-
-Tip:
-  Use this from anywhere inside the repo.
 USAGE
 }
 
