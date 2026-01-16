@@ -251,7 +251,8 @@ def db_init() -> None:
           enc_private_key TEXT NOT NULL,
           created_at TEXT NOT NULL,
           is_frozen INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(user_id))
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
         """
     )
     cur.execute(
@@ -260,7 +261,8 @@ def db_init() -> None:
           user_id INTEGER PRIMARY KEY,
           layout_json TEXT NOT NULL,
           updated_at TEXT NOT NULL,
-          FOREIGN KEY(user_id))
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
         """
     )
     cur.execute(
@@ -271,12 +273,14 @@ def db_init() -> None:
           platform TEXT NOT NULL,
           url TEXT NOT NULL,
           created_at TEXT NOT NULL,
-          FOREIGN KEY(user_id))
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        )
         """
     )
     cur.executescript("""
         CREATE TABLE IF NOT EXISTS verification_requests (
-          user_id INTEGER PRIMARY KEY));
+          user_id INTEGER PRIMARY KEY) REFERENCES users(id)
+        );
 
         CREATE TABLE IF NOT EXISTS server_secrets (
           key TEXT PRIMARY KEY,
