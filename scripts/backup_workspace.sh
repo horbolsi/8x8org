@@ -23,3 +23,7 @@ tar -czf "$OUT" \
   .
 
 echo "✅ Backup written: $OUT"
+
+# Keep only last N backups (default: 72). Override with: export KEEP_BACKUPS=168
+KEEP="${KEEP_BACKUPS:-72}"
+ls -1t "$OUT_DIR"/workspace-backup-*.tar.gz 2>/dev/null | tail -n +"$((KEEP+1))" | xargs -r rm -f
