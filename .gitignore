@@ -1,3 +1,35 @@
 *.zip
 *.tar.gz
 node_modules/
+
+# local env + virtualenv
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# runtime artifacts
+logs/
+workspace/
+*.log
+
+# termux/runtime
+runtime/
+__pycache__/
+*.pyc
+*.log
+
+# local secrets
+.env
+
+# local backups (keep on device, don't push)
+archive/
+
+# runtime
+runtime/
+__pycache__/
+*.pyc
+*.log
+
+# local secrets
+.env

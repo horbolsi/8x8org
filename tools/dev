@@ -1,0 +1,185 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -Eeuo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RUNTIME="$ROOT/runtime"
+
+DASH_PID="$RUNTIME/dashboard.pid"
+BOT_PID="$RUNTIME/bot.pid"
+
+DASH_LOG="$RUNTIME/dashboard.out"
+BOT_LOG="$RUNTIME/bot.out"
+
+# Prefer user venv if present, else fall back
+VENV="$HOME/.venvs/8x8org"
+PY="python"
+if [ -x "$VENV/bin/python" ]; then
+  PY="$VENV/bin/python"
+fi
+
+# Dashboard entry: prefer sovereign_dashboard_full.py, else app/dashboard.py
+DASH_ENTRY="$ROOT/sovereign_dashboard_full.py"
+if [ ! -f "$DASH_ENTRY" ] && [ -f "$ROOT/app/dashboard.py" ]; then
+  DASH_ENTRY="$ROOT/app/dashboard.py"
+fi
+
+# Env script: optional
+ENV_SH="$ROOT/scripts/env.sh"
+
+die(){ echo "❌ $*" >&2; exit 1; }
+
+is_pid_alive(){
+  local pid="$1"
+  [ -n "$pid" ] || return 1
+  kill -0 "$pid" >/dev/null 2>&1
+}
+
+read_pid(){
+  local f="$1"
+  [ -f "$f" ] || { echo ""; return 0; }
+  tr -d '[:space:]' < "$f" || true
+}
+
+write_pid(){
+  local f="$1" pid="$2"
+  printf "%s\n" "$pid" > "$f"
+}
+
+stop_pidfile(){
+  local f="$1" name="$2"
+  local pid
+  pid="$(read_pid "$f")"
+  if [ -z "$pid" ]; then
+    echo "ℹ️ $name: no pid"
+    rm -f "$f" 2>/dev/null || true
+    return 0
+  fi
+  if is_pid_alive "$pid"; then
+    kill "$pid" >/dev/null 2>&1 || true
+    sleep 0.2
+    is_pid_alive "$pid" && kill -9 "$pid" >/dev/null 2>&1 || true
+    echo "✅ $name stopped"
+  else
+    echo "ℹ️ $name pid stale ($pid) — cleaned"
+  fi
+  rm -f "$f" 2>/dev/null || true
+}
+
+start_dashboard(){
+  mkdir -p "$RUNTIME"
+  if [ -f "$ENV_SH" ]; then
+    # shellcheck disable=SC1090
+    source "$ENV_SH"
+  fi
+
+  # Already running?
+  local pid
+  pid="$(read_pid "$DASH_PID")"
+  if [ -n "$pid" ] && is_pid_alive "$pid"; then
+    echo "ℹ️ Dashboard already running pid=$pid (log: $DASH_LOG)"
+    return 0
+  fi
+
+  [ -f "$DASH_ENTRY" ] || die "Dashboard entry not found: $DASH_ENTRY"
+
+  nohup "$PY" "$DASH_ENTRY" >> "$DASH_LOG" 2>&1 &
+  write_pid "$DASH_PID" "$!"
+  echo "✅ Dashboard started pid=$! (log: $DASH_LOG)"
+}
+
+start_bot(){
+  mkdir -p "$RUNTIME"
+  local entry="$ROOT/bot/telegram_webapp_bot.py"
+  [ -f "$entry" ] || die "Bot entry not found: $entry"
+
+  local pid
+  pid="$(read_pid "$BOT_PID")"
+  if [ -n "$pid" ] && is_pid_alive "$pid"; then
+    echo "ℹ️ Bot already running pid=$pid (log: $BOT_LOG)"
+    return 0
+  fi
+
+  nohup "$PY" "$entry" >> "$BOT_LOG" 2>&1 &
+  write_pid "$BOT_PID" "$!"
+  echo "✅ Bot started pid=$! (log: $BOT_LOG)"
+}
+
+status(){
+  echo "--- status ---"
+  local dpid bpid
+  dpid="$(read_pid "$DASH_PID")"
+  bpid="$(read_pid "$BOT_PID")"
+
+  if [ -n "$dpid" ] && is_pid_alive "$dpid"; then
+    echo "dashboard: running pid=$dpid"
+  else
+    echo "dashboard: stopped"
+  fi
+
+  if [ -n "$bpid" ] && is_pid_alive "$bpid"; then
+    echo "bot: running pid=$bpid"
+  else
+    echo "bot: stopped"
+  fi
+
+  echo "logs:"
+  echo "  $DASH_LOG"
+  echo "  $BOT_LOG"
+}
+
+open_info(){
+  # Don't auto-open (Termux varies). Just show the URL.
+  local host="${SOVEREIGN_HOST:-127.0.0.1}"
+  local port="${SOVEREIGN_PORT:-5000}"
+  echo "URL: http://$host:$port"
+  echo "Tip: open it in your phone browser."
+}
+
+show_logs(){
+  local f="$1"
+  if [ ! -f "$f" ]; then
+    echo "ℹ️ no log yet: $f"
+    return 0
+  fi
+  tail -n 200 "$f"
+}
+
+tail_logs(){
+  local f="$1"
+  if [ ! -f "$f" ]; then
+    echo "ℹ️ no log yet: $f"
+    return 0
+  fi
+  tail -n 200 -f "$f"
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  status) status ;;
+
+  open) open_info ;;
+
+  dash:start) start_dashboard ;;
+  dash:stop) stop_pidfile "$DASH_PID" "Dashboard" ;;
+  dash:restart) stop_pidfile "$DASH_PID" "Dashboard"; start_dashboard ;;
+  dash:logs) show_logs "$DASH_LOG" ;;
+  dash:tail) tail_logs "$DASH_LOG" ;;
+
+  bot:start) start_bot ;;
+  bot:stop) stop_pidfile "$BOT_PID" "Bot" ;;
+  bot:restart) stop_pidfile "$BOT_PID" "Bot"; start_bot ;;
+  bot:logs) show_logs "$BOT_LOG" ;;
+  bot:tail) tail_logs "$BOT_LOG" ;;
+
+  *)
+    cat <<USAGE
+Usage:
+  dev status
+  dev open
+
+  dev dash:start|dash:stop|dash:restart|dash:logs|dash:tail
+  dev bot:start|bot:stop|bot:restart|bot:logs|bot:tail
+USAGE
+    exit 2
+  ;;
+esac
