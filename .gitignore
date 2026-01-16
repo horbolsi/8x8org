@@ -23,3 +23,4 @@ logs/
 # Databases (you can remove these lines if you REALLY want to push DBs)
 **/*.db
 **/*.sqlite
+archive/_git_backup/
