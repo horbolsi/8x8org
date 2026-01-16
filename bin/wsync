@@ -1,29 +1,73 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -Eeuo pipefail
+
 cd "$(git rev-parse --show-toplevel)"
 
 ts(){ date '+%Y-%m-%d %H:%M:%S'; }
 
+status_clean() {
+  [[ -z "$(git status --porcelain)" ]]
+}
+
+auto_stash_begin() {
+  if status_clean; then
+    echo "✅ clean"
+    echo "0" > /tmp/wsync_stashed 2>/dev/null || true
+    return 0
+  fi
+  echo "ℹ️ local changes detected → stashing for pull"
+  git stash push -u -m "wsync auto-stash $(ts)" >/dev/null
+  echo "1" > /tmp/wsync_stashed 2>/dev/null || true
+}
+
+auto_stash_end() {
+  if [[ "$(cat /tmp/wsync_stashed 2>/dev/null || echo 0)" == "1" ]]; then
+    echo "ℹ️ restoring stash"
+    git stash pop >/dev/null || {
+      echo "⚠️ stash pop had conflicts. Resolve then run: git add -A && git rebase --continue OR git rebase --abort"
+      exit 1
+    }
+  fi
+}
+
+cmd_pull() {
+  auto_stash_begin
+  git pull --rebase
+  auto_stash_end
+  git status --porcelain || true
+}
+
+cmd_push() {
+  git add -A
+  git commit -m "workspace sync $(ts)" >/dev/null 2>&1 || true
+  git push
+  git status --porcelain || true
+}
+
+cmd_sync() {
+  cmd_pull
+  cmd_push
+}
+
+usage() {
+  cat <<'USAGE'
+Usage: bash bin/wsync <command>
+
+  pull     Pull from GitHub (auto-stashes local changes)
+  push     Add/commit/push to GitHub
+  sync     pull then push
+  status   show git status
+
+Tip:
+  Use this from anywhere inside the repo.
+USAGE
+}
+
 case "${1:-}" in
-  pull)
-    git pull --rebase
-    ;;
-  push)
-    git add -A
-    git commit -m "workspace sync $(ts)" >/dev/null 2>&1 || true
-    git push
-    ;;
-  sync)
-    git pull --rebase
-    git add -A
-    git commit -m "workspace sync $(ts)" >/dev/null 2>&1 || true
-    git push
-    ;;
-  status)
-    git status --porcelain
-    ;;
-  *)
-    echo "Usage: bash bin/wsync {pull|push|sync|status}"
-    exit 2
-    ;;
+  pull) cmd_pull ;;
+  push) cmd_push ;;
+  sync) cmd_sync ;;
+  status) git status --porcelain ;;
+  -h|--help|"") usage ;;
+  *) echo "Unknown command: ${1:-}"; usage; exit 2 ;;
 esac
