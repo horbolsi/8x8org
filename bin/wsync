@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -Eeuo pipefail
-
 cd "$(git rev-parse --show-toplevel)"
 
 ts(){ date '+%Y-%m-%d %H:%M:%S'; }
@@ -9,9 +8,7 @@ FLAG_DIR="${TMPDIR:-$HOME/.cache}"
 mkdir -p "$FLAG_DIR"
 FLAG_FILE="$FLAG_DIR/wsync_stashed.flag"
 
-status_clean() {
-  [[ -z "$(git status --porcelain)" ]]
-}
+status_clean() { [[ -z "$(git status --porcelain)" ]]; }
 
 auto_stash_begin() {
   if status_clean; then
@@ -28,9 +25,9 @@ auto_stash_end() {
   if [[ "$(cat "$FLAG_FILE" 2>/dev/null || echo 0)" == "1" ]]; then
     echo "ℹ️ restoring stash"
     git stash pop >/dev/null || {
-      echo "⚠️ stash pop had conflicts. Resolve, then:"
+      echo "⚠️ stash pop conflicts. Fix files, then:"
       echo "  git add -A"
-      echo "  git rebase --continue   (or: git rebase --abort)"
+      echo "  git rebase --continue  (or: git rebase --abort)"
       exit 1
     }
   fi
@@ -50,19 +47,41 @@ cmd_push() {
   git status --porcelain || true
 }
 
-cmd_sync() {
-  cmd_pull
-  cmd_push
+cmd_sync() { cmd_pull; cmd_push; }
+
+cmd_backup() {
+  local keep="${KEEP_BACKUPS:-72}"
+  echo "ℹ️ backup now (KEEP_BACKUPS=$keep)"
+  bash scripts/backup_workspace.sh
+}
+
+cmd_doctor() {
+  echo "--- wsync doctor ---"
+  echo "root: $(pwd)"
+  echo "branch: $(git rev-parse --abbrev-ref HEAD)"
+  echo "head: $(git rev-parse --short HEAD)  $(git log -1 --pretty=%s)"
+  echo
+  echo "--- remotes ---"
+  git remote -v
+  echo
+  echo "--- status ---"
+  git status --porcelain || true
+  echo
+  echo "--- cron ---"
+  crontab -l 2>/dev/null || echo "(no crontab)"
 }
 
 usage() {
   cat <<'USAGE'
 Usage: bash bin/wsync <command>
 
-  pull     Pull from GitHub (auto-stashes local changes)
-  push     Add/commit/push to GitHub
-  sync     pull then push
-  status   show git status
+Core:
+  pull        Pull from GitHub (auto-stash)
+  push        Commit+push to GitHub
+  sync        pull then push
+  status      show status
+  backup      run backup now (uses scripts/backup_workspace.sh)
+  doctor      show repo + remote + cron diagnostics
 USAGE
 }
 
@@ -71,6 +90,8 @@ case "${1:-}" in
   push) cmd_push ;;
   sync) cmd_sync ;;
   status) git status --porcelain ;;
+  backup) cmd_backup ;;
+  doctor) cmd_doctor ;;
   -h|--help|"") usage ;;
   *) echo "Unknown command: ${1:-}"; usage; exit 2 ;;
 esac
