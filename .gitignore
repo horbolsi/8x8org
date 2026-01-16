@@ -1,0 +1,25 @@
+# Secrets
+**/.env
+**/*token*
+**/*secret*
+**/*key*
+**/id_ed25519*
+**/known_hosts
+
+# Python cache / venv
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/.venvs/
+
+# Node junk
+**/node_modules/
+
+# Runtime + logs (often huge/noisy)
+runtime/
+logs/
+**/*.log
+
+# Databases (you can remove these lines if you REALLY want to push DBs)
+**/*.db
+**/*.sqlite

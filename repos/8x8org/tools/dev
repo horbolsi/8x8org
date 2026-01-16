@@ -1,0 +1,236 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -Eeuo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RUNTIME="$ROOT/runtime"
+mkdir -p "$RUNTIME"
+
+DASH_PID="$RUNTIME/dashboard.pid"
+BOT_PID="$RUNTIME/bot.pid"
+DASH_LOG="$RUNTIME/dashboard.out"
+BOT_LOG="$RUNTIME/bot.out"
+DASH_PORT_FILE="$RUNTIME/dashboard.port"
+
+NEEDLE="Werkzeug appears to be used in a production deployment"
+
+pick_port() {
+  # If user/admin forced a port, use it.
+  if [[ -n "${PORT:-}" ]]; then
+    echo "$PORT"
+    return 0
+  fi
+
+  # Try a predictable range first (nice for humans)
+  python - <<'PY'
+import socket
+
+def free(p):
+    s = socket.socket()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        s.bind(("127.0.0.1", p))
+        return True
+    except OSError:
+        return False
+    finally:
+        s.close()
+
+for p in range(5000, 5101):
+    if free(p):
+        print(p)
+        raise SystemExit(0)
+
+# Fallback: let OS choose any free port
+s = socket.socket()
+s.bind(("127.0.0.1", 0))
+print(s.getsockname()[1])
+s.close()
+PY
+}
+
+read_port() {
+  if [[ -f "$DASH_PORT_FILE" ]]; then
+    cat "$DASH_PORT_FILE"
+  else
+    echo "${PORT:-5000}"
+  fi
+}
+
+is_pid_running() {
+  local pid="$1"
+  [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+stop_pidfile() {
+  local pidfile="$1"
+  if [[ -f "$pidfile" ]]; then
+    local pid
+    pid="$(cat "$pidfile" 2>/dev/null || true)"
+    if is_pid_running "$pid"; then
+      kill "$pid" 2>/dev/null || true
+      sleep 0.2
+      kill -9 "$pid" 2>/dev/null || true
+      echo "✅ stopped pid=$pid"
+    else
+      echo "ℹ️ pid stale ($pid) — cleaned"
+    fi
+    rm -f "$pidfile"
+  else
+    echo "ℹ️ no pid"
+  fi
+}
+
+tail_logs() {
+  local f="$1"
+  touch "$f"
+  # print last lines (filtered), then follow (filtered)
+  tail -n 80 "$f" | sed -u "/$NEEDLE/d"
+  echo "---- following (CTRL+C to stop) ----"
+  tail -f "$f" | sed -u "/$NEEDLE/d"
+}
+
+start_dashboard() {
+  local want_port="${1:-}"
+  local port
+
+  if [[ -n "$want_port" ]]; then
+    if [[ "$want_port" =~ ^[0-9]+$ ]]; then
+      port="$want_port"
+    else
+      echo "❌ invalid port: $want_port"
+      exit 1
+    fi
+  else
+    port="$(pick_port)"
+  fi
+
+  export PORT="$port"
+  echo "$PORT" > "$DASH_PORT_FILE"
+
+  # already running?
+  if [[ -f "$DASH_PID" ]]; then
+    local pid
+    pid="$(cat "$DASH_PID" 2>/dev/null || true)"
+    if is_pid_running "$pid"; then
+      echo "ℹ️ dashboard already running pid=$pid (PORT=$PORT)"
+      return 0
+    else
+      echo "ℹ️ dashboard pid stale ($pid) — cleaned"
+      rm -f "$DASH_PID"
+    fi
+  fi
+
+  # Ensure venv if present
+  if [[ -f "$ROOT/scripts/env.sh" ]]; then
+    # shellcheck disable=SC1090
+    source "$ROOT/scripts/env.sh" || true
+  fi
+
+  : > "$DASH_LOG" || true
+
+  # Run wrapper (keeps compatibility)
+  # Use -u for unbuffered logs
+  ( cd "$ROOT" && nohup python -u sovereign_dashboard_full.py >>"$DASH_LOG" 2>&1 & echo $! > "$DASH_PID" )
+
+  local pid
+  pid="$(cat "$DASH_PID")"
+  echo "✅ Dashboard started pid=$pid (PORT=$PORT) (log: $DASH_LOG)"
+}
+
+case "${1:-}" in
+  status)
+    echo "--- status ---"
+    if [[ -f "$DASH_PID" ]] && is_pid_running "$(cat "$DASH_PID" 2>/dev/null || true)"; then
+      echo "dashboard: running pid=$(cat "$DASH_PID") port=$(read_port)"
+    else
+      echo "dashboard: stopped"
+    fi
+    if [[ -f "$BOT_PID" ]] && is_pid_running "$(cat "$BOT_PID" 2>/dev/null || true)"; then
+      echo "bot: running pid=$(cat "$BOT_PID")"
+    else
+      echo "bot: stopped"
+    fi
+    echo "logs:"
+    echo "  $DASH_LOG"
+    echo "  $BOT_LOG"
+    ;;
+
+  open)
+    p="$(read_port)"
+    echo "URL: http://127.0.0.1:$p"
+    echo "Tip: open it in your phone browser."
+    ;;
+
+  dash:start)
+    start_dashboard "${2:-}"
+    ;;
+
+  dash:stop)
+    stop_pidfile "$DASH_PID"
+    ;;
+
+  dash:restart)
+    stop_pidfile "$DASH_PID"
+    start_dashboard "${2:-}"
+    ;;
+
+  dash:tail)
+    tail_logs "$DASH_LOG"
+    ;;
+
+  dash:logs)
+    echo "$DASH_LOG"
+    ;;
+
+  bot:start)
+    if [[ -f "$BOT_PID" ]] && is_pid_running "$(cat "$BOT_PID" 2>/dev/null || true)"; then
+      echo "ℹ️ bot already running pid=$(cat "$BOT_PID")"
+      exit 0
+    fi
+    if [[ -f "$ROOT/scripts/env.sh" ]]; then
+      # shellcheck disable=SC1090
+      source "$ROOT/scripts/env.sh" || true
+    fi
+    : > "$BOT_LOG" || true
+    ( cd "$ROOT" && nohup python -u services/bot/telegram_webapp_bot.py >>"$BOT_LOG" 2>&1 & echo $! > "$BOT_PID" )
+    echo "✅ Bot started pid=$(cat "$BOT_PID") (log: $BOT_LOG)"
+    ;;
+
+  bot:stop)
+    stop_pidfile "$BOT_PID"
+    ;;
+
+  bot:restart)
+    stop_pidfile "$BOT_PID"
+    ( cd "$ROOT" && nohup python -u services/bot/telegram_webapp_bot.py >>"$BOT_LOG" 2>&1 & echo $! > "$BOT_PID" )
+    echo "✅ Bot started pid=$(cat "$BOT_PID") (log: $BOT_LOG)"
+    ;;
+
+  bot:tail)
+    tail_logs "$BOT_LOG"
+    ;;
+
+  *)
+    cat <<EOF
+Usage:
+  tools/dev status
+  tools/dev open
+
+  tools/dev dash:start [port]
+  tools/dev dash:stop
+  tools/dev dash:restart [port]
+  tools/dev dash:tail
+  tools/dev dash:logs
+
+  tools/dev bot:start
+  tools/dev bot:stop
+  tools/dev bot:restart
+  tools/dev bot:tail
+
+Notes:
+  - If you omit [port], a free port is auto-selected (5000-5100, else any free port).
+  - You can also force: PORT=5055 tools/dev dash:start
+EOF
+    exit 1
+    ;;
+esac

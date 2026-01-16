@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>8x8org Sovereign Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <link rel="stylesheet" href="/static/dashboard.css"/>
+</head>
+<body class="bg-zinc-950 text-zinc-100">
+  <header class="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
+      <div>
+        <div class="text-xl font-semibold">8x8org Sovereign Dashboard</div>
+        <div class="text-xs text-zinc-400">Repo: {{ repo_root }}</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnSaveLayout" class="btn">Save layout</button>
+        <button id="btnRefresh" class="btn">Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-4 space-y-4">
+    <!-- AI TOP -->
+    <section class="card">
+      <div class="card-h">
+        <div class="h-title">AI (Central Brain)</div>
+        <div class="h-sub">Use AI → apply in terminal → reflects in files + logs</div>
+      </div>
+      <div class="card-b">
+        <div class="grid gap-2">
+          <textarea id="aiPrompt" class="input h-28" placeholder="Ask for code, fixes, commands..."></textarea>
+          <div class="flex gap-2">
+            <button id="btnAIToChat" class="btn-primary">Send to Global Chat</button>
+            <button id="btnAIToTerminal" class="btn">Suggest Terminal Cmd</button>
+          </div>
+          <pre id="aiHint" class="mono text-xs text-zinc-400">Tip: this UI can be wired to OpenAI/local models later. For now it routes through Global Chat + actions.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRAGGABLE WIDGETS (unlimited scroll) -->
+    <section class="card">
+      <div class="card-h">
+        <div class="h-title">Workspace Widgets (Drag to customize)</div>
+        <div class="h-sub">Unlimited scroll • Your custom placement is saved</div>
+      </div>
+
+      <div id="widgetGrid" class="grid gap-4 md:grid-cols-2">
+        <!-- LEFT COL -->
+        <div class="col space-y-4" data-col="left">
+          <!-- Terminal -->
+          <div class="card widget" data-widget="terminal">
+            <div class="card-h">
+              <div class="h-title">Terminal</div>
+              <div class="h-sub">Safe allowlist + timeout • Output is logged</div>
+            </div>
+            <div class="card-b space-y-2">
+              <div class="flex gap-2">
+                <input id="terminalCmd" class="input flex-1" placeholder="e.g. git status" />
+                <button id="btnRunCmd" class="btn-primary">Run</button>
+              </div>
+              <pre id="terminalOut" class="mono h-56 overflow-auto p-3 rounded-xl bg-black/60 border border-zinc-800"></pre>
+            </div>
+          </div>
+
+          <!-- File System UNDER terminal -->
+          <div class="card widget" data-widget="files">
+            <div class="card-h">
+              <div class="h-title">File System (under Terminal)</div>
+              <div class="h-sub">Browse repo, view/edit files (admin for write)</div>
+            </div>
+            <div class="card-b space-y-2">
+              <div class="flex gap-2">
+                <input id="filePath" class="input flex-1" value="." />
+                <button id="btnList" class="btn">List</button>
+              </div>
+              <div id="fileList" class="mono text-sm h-44 overflow-auto p-3 rounded-xl bg-black/40 border border-zinc-800"></div>
+              <div class="grid gap-2">
+                <input id="editPath" class="input" placeholder="path/to/file.py" />
+                <textarea id="editContent" class="input h-36" placeholder="file content..."></textarea>
+                <div class="flex gap-2">
+                  <button id="btnReadFile" class="btn">Read</button>
+                  <button id="btnWriteFile" class="btn-primary">Write (admin)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Logs UNDER file system -->
+          <div class="card widget" data-widget="logs">
+            <div class="card-h">
+              <div class="h-title">Logs (under File System)</div>
+              <div class="h-sub">Terminal + background logs</div>
+            </div>
+            <div class="card-b space-y-2">
+              <div class="flex gap-2">
+                <button id="btnLoadLogs" class="btn">Load logs</button>
+              </div>
+              <pre id="logsOut" class="mono h-56 overflow-auto p-3 rounded-xl bg-black/60 border border-zinc-800"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COL -->
+        <div class="col space-y-4" data-col="right">
+          <!-- System Resources -->
+          <div class="card widget" data-widget="system">
+            <div class="card-h">
+              <div class="h-title">System Resources</div>
+              <div class="h-sub">CPU • RAM • Disk • Net</div>
+            </div>
+            <div class="card-b">
+              <div id="sysBox" class="mono text-sm whitespace-pre-wrap"></div>
+            </div>
+          </div>
+
+          <!-- Global Chat BETWEEN system resources and autonomous telegram bot -->
+          <div class="card widget" data-widget="global_chat">
+            <div class="card-h">
+              <div class="h-title">Global Chat (between System + Telegram Bot)</div>
+              <div class="h-sub">AI + Users + Agents • Saved in workspace</div>
+            </div>
+            <div class="card-b space-y-2">
+              <div id="chatBox" class="mono text-sm h-48 overflow-auto p-3 rounded-xl bg-black/40 border border-zinc-800"></div>
+              <div class="flex gap-2">
+                <input id="chatInput" class="input flex-1" placeholder="message..." />
+                <button id="btnSendChat" class="btn-primary">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Autonomous Telegram Bot -->
+          <div class="card widget" data-widget="telegram">
+            <div class="card-h">
+              <div class="h-title">Autonomous Telegram Bot</div>
+              <div class="h-sub">Status + future controls</div>
+            </div>
+            <div class="card-b mono text-sm">
+              <div>Token: <span class="text-zinc-400">set TELEGRAM_BOT_TOKEN in scripts/env.sh</span></div>
+              <div class="mt-2 text-zinc-400">Next: add start/stop bot subprocess + webhook/polling monitor.</div>
+            </div>
+          </div>
+
+          <!-- Blockchain Explorer ABOVE wallet -->
+          <div class="card widget" data-widget="blockchain">
+            <div class="card-h">
+              <div class="h-title">Blockchain Explorer (Market + Chain Intelligence)</div>
+              <div class="h-sub">Global market • top coins • DeFi TVL • errors shown when offline</div>
+            </div>
+            <div class="card-b space-y-2">
+              <button id="btnMarket" class="btn">Refresh market intel</button>
+              <pre id="marketOut" class="mono text-xs h-64 overflow-auto p-3 rounded-xl bg-black/60 border border-zinc-800"></pre>
+            </div>
+          </div>
+
+          <!-- Wallet BELOW blockchain explorer -->
+          <div class="card widget" data-widget="wallets">
+            <div class="card-h">
+              <div class="h-title">User Wallets (Admin-controlled)</div>
+              <div class="h-sub">Account → verify → wallet → trading (DEX/CEX modules later)</div>
+            </div>
+            <div class="card-b text-sm text-zinc-300 space-y-2">
+              <div class="mono text-zinc-400">
+                Planned flow:
+                1) User account created
+                2) Verification (KYC/steps you define)
+                3) Wallet provisioned
+                4) Admin can lock/unlock actions
+                5) Trading widgets: DEX/CEX connectors
+              </div>
+              <div class="text-zinc-400">Next: implement wallet DB + admin UI + verification states.</div>
+            </div>
+          </div>
+
+          <!-- Social -->
+          <div class="card widget" data-widget="social">
+            <div class="card-h">
+              <div class="h-title">Social Platforms</div>
+              <div class="h-sub">User can link accounts; space reserved</div>
+            </div>
+            <div class="card-b text-sm text-zinc-400">
+              Next: add profile editor + link registry + per-user settings.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.__INITIAL_LAYOUT__ = {{ layout|tojson }};
+  </script>
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>

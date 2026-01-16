@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{app_name}} • v{{app_version}}</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.1/dist/gridstack-all.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/gridstack@10.1.1/dist/gridstack.min.css" rel="stylesheet"/>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#070b16;
+      --card: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.10);
+      --text:#e5e7eb;
+      --muted: rgba(229,231,235,.70);
+      --accent:#8b5cf6;
+      --accent2:#22c55e;
+      --danger:#ef4444;
+      --warn:#f59e0b;
+    }
+    body{
+      background:
+        radial-gradient(1200px 600px at 10% 0%, rgba(139,92,246,0.22), transparent),
+        radial-gradient(900px 520px at 95% 20%, rgba(34,197,94,0.16), transparent),
+        var(--bg);
+      color:var(--text);
+    }
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .btn{border:1px solid var(--border);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.06);}
+    .btn:hover{background:rgba(255,255,255,.10);}
+    .btn2{border:1px solid rgba(139,92,246,.45);background:rgba(139,92,246,.16);}
+    .btn2:hover{background:rgba(139,92,246,.24);}
+    .btnOk{border:1px solid rgba(34,197,94,.45);background:rgba(34,197,94,.14);}
+    .btnOk:hover{background:rgba(34,197,94,.22);}
+    .btnWarn{border:1px solid rgba(245,158,11,.45);background:rgba(245,158,11,.14);}
+    .btnWarn:hover{background:rgba(245,158,11,.22);}
+    .pill{border:1px solid var(--border);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--muted);}
+    .terminal{background:rgba(0,0,0,.36);border-radius:14px;border:1px solid rgba(255,255,255,.10);}
+    .scroll{overflow:auto;}
+    .wrap{max-width:1550px;margin:0 auto;padding:16px;}
+    .section-title{font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:10px;}
+    .subtle{color:var(--muted);}
+    .grid-stack{min-height:1400px;}
+    .gs-item-content{padding:12px;}
+    .stickyTop{position:sticky;top:0;z-index:50;backdrop-filter: blur(12px);background:rgba(7,11,22,.55);border-bottom:1px solid rgba(255,255,255,.08);}
+    a.link{color:#c4b5fd;text-decoration:underline; text-underline-offset:2px;}
+  </style>
+</head>
+<body>
+  <div class="stickyTop">
+    <div class="wrap">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between py-3">
+        <div class="flex items-center gap-3">
+          <div class="text-2xl font-extrabold">🧊 8x8org</div>
+          <div class="pill">Dashboard • {{app_version}}</div>
+          <div class="pill" id="whoamiPill">guest</div>
+          <div class="pill" id="verifyPill">unverified</div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="btn" onclick="toggleEdit()" id="editBtn">🔧 Layout: Locked</button>
+          <button class="btn" onclick="saveLayout()">💾 Save Layout</button>
+          <button class="btn" onclick="resetLayout()">↩ Reset</button>
+          <button class="btn btn2" onclick="quickJump('chainintel')">⛓ Jump: Markets</button>
+          <button class="btn btn2" onclick="quickJump('terminal')">🧩 Jump: Terminal</button>
+          <button class="btn" onclick="logout()">🚪 Logout</button>
+        </div>
+      </div>
+      <div class="subtle text-xs pb-2">
+        Secure terminal allowlist • sandboxed file ops • unlimited scroll • prepare for WebApp + mobile clients.
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid-stack"></div>
+
+    <footer class="mt-4 subtle text-xs">
+      Tip: For Telegram WebApp you must use a public HTTPS URL (like your youware domain). Local 127.0.0.1 won’t load inside Telegram.
+    </footer>
+  </div>
+
+<script>
+  const socket = io({transports: ['polling'], upgrade: false, withCredentials: true, forceNew: true});
+  let grid;
+  let editMode = false;
+
+  function qs(sel){ return document.querySelector(sel); }
+  function esc(s){ return (s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function fmtUSD(n){
+    if(n == null) return "-";
+    const x = Number(n);
+    if(!isFinite(x)) return "-";
+    if(x >= 1e12) return (x/1e12).toFixed(2)+"T";
+    if(x >= 1e9) return (x/1e9).toFixed(2)+"B";
+    if(x >= 1e6) return (x/1e6).toFixed(2)+"M";
+    return x.toFixed(2);
+  }
+  function quickJump(id){
+    const el = document.querySelector(`[gs-id="${id}"]`);
+    if(!el) return;
+    el.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  // REQUIRED ORDER (your request):
+  // - AI top
+  // - System top-right
+  // - Global chat between System and Telegram bot
+  // - Terminal then Files then Logs (stacked)
+  // - Blockchain explorer/intel ABOVE wallet
+  const DEFAULT_LAYOUT = [
+    {id:"ai",        x:0,  y:0,  w:12, h:6},
+    {id:"sys",       x:12, y:0,  w:6,  h:4},
+    {id:"gchat",     x:12, y:4,  w:6,  h:4},
+    {id:"tbot",      x:12, y:8,  w:6,  h:4},
+
+    {id:"chainintel",x:0,  y:6,  w:12, h:9},
+    {id:"wallet",    x:0,  y:15, w:12, h:8},
+    {id:"trade",     x:0,  y:23, w:12, h:7},
+    {id:"social",    x:0,  y:30, w:12, h:5},
+
+    {id:"terminal",  x:12, y:12, w:6,  h:6},
+    {id:"files",     x:12, y:18, w:6,  h:6},
+    {id:"logs",      x:12, y:24, w:6,  h:6},
+    {id:"repo",      x:12, y:30, w:6,  h:5},
+  ];
+
+  function widgetHTML(id){
+    if(id==="ai") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">🧠 AI Console <span class="pill">top</span></div>
+        <div class="terminal p-3 h-[260px] scroll mono text-sm" id="aiOut">> Sovereign AI ready.</div>
+        <div class="mt-2 flex gap-2">
+          <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono" id="aiIn" placeholder="Ask for code, debugging, market intel..." />
+          <button class="btn btn2" onclick="aiSend()">Send</button>
+        </div>
+        <div class="mt-2 subtle text-xs">
+          Roadmap: “Run in Terminal” buttons, Telegram WebApp bridge, mobile clients.
+        </div>
+      </div>
+    `;
+
+    if(id==="sys") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">📊 System Resources <span class="pill">top-right</span></div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="card p-3"><div class="subtle">CPU</div><div class="text-2xl font-bold" id="cpuPct">0%</div></div>
+          <div class="card p-3"><div class="subtle">Memory</div><div class="text-2xl font-bold" id="memPct">0%</div></div>
+          <div class="card p-3"><div class="subtle">Disk</div><div class="text-2xl font-bold" id="diskPct">0%</div></div>
+          <div class="card p-3"><div class="subtle">Processes</div><div class="text-2xl font-bold" id="procCnt">0</div></div>
+        </div>
+        <div class="mt-2 subtle text-xs mono" id="netStats">net: -</div>
+      </div>
+    `;
+
+    if(id==="gchat") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">🌐 Global Chat <span class="pill">between sys & bot</span></div>
+        <div class="terminal p-3 h-[220px] scroll mono text-sm" id="gcOut">> Connected.</div>
+        <div class="mt-2 flex gap-2">
+          <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono" id="gcIn" placeholder="Say hi..." />
+          <button class="btn" onclick="gcSend()">Send</button>
+        </div>
+      </div>
+    `;
+
+    if(id==="tbot") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">🤖 Autonomous Telegram Bot <span class="pill">control plane</span></div>
+        <div class="subtle text-sm">
+          Runs as a separate process. This panel checks configuration & shows WebApp link.
+        </div>
+        <div class="mt-3 card p-3 text-sm">
+          <div class="flex items-center justify-between">
+            <div>Bot Status</div>
+            <div class="pill" id="tbotStatus">offline</div>
+          </div>
+          <div class="mt-2 grid grid-cols-2 gap-2">
+            <button class="btn" onclick="tbotPing()">🔍 Ping</button>
+            <button class="btn btn2" onclick="tbotHowTo()">🧩 WebApp Steps</button>
+          </div>
+          <div class="mt-2 terminal p-2 mono text-xs h-[120px] scroll" id="tbotOut">> not connected</div>
+        </div>
+      </div>
+    `;
+
+    if(id==="terminal") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">🧩 Terminal <span class="pill">sandbox</span></div>
+        <div class="terminal p-3 h-[240px] scroll mono text-sm" id="termOut">> cwd: workspace</div>
+        <div class="mt-2 flex gap-2">
+          <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono" id="termIn" placeholder="Allowed: ls, cat, git, python, pip (no pipes/redirection)" />
+          <button class="btn btn2" onclick="termRun()">Run</button>
+        </div>
+        <div class="mt-2 subtle text-xs">
+          Allowlisted commands • workspace-only paths • no shell meta chars.
+        </div>
+      </div>
+    `;
+
+    if(id==="files") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">📁 File System <span class="pill">under terminal</span></div>
+        <div class="flex gap-2 mb-2">
+          <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono text-sm" id="fsPath" value="." />
+          <button class="btn" onclick="fsList()">Go</button>
+          <button class="btn" onclick="fsUp()">Up</button>
+        </div>
+        <div class="terminal p-2 mono text-sm h-[260px] scroll" id="fsOut">Loading...</div>
+      </div>
+    `;
+
+    if(id==="logs") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">🧾 Logs <span class="pill">under filesystem</span></div>
+        <div class="terminal p-2 mono text-xs h-[300px] scroll" id="logOut">> logs</div>
+        <div class="mt-2 flex gap-2">
+          <button class="btn" onclick="logRefresh()">Refresh</button>
+          <button class="btn" onclick="logClearView()">Clear view</button>
+        </div>
+      </div>
+    `;
+
+    if(id==="repo") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">🗂 Repo <span class="pill">status</span></div>
+        <div class="terminal p-2 mono text-xs h-[220px] scroll" id="repoOut">> repo status</div>
+        <div class="mt-2 flex gap-2">
+          <button class="btn" onclick="repoStatus()">git status</button>
+          <button class="btn" onclick="repoTree()">workspace tree</button>
+        </div>
+      </div>
+    `;
+
+    if(id==="chainintel") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">⛓️ Blockchain Intelligence <span class="pill">enriched</span></div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div class="card p-3"><div class="subtle text-sm">Global Market Cap</div><div class="text-xl font-bold" id="mkCap">-</div><div class="subtle text-xs" id="mkCapChg">-</div></div>
+          <div class="card p-3"><div class="subtle text-sm">24h Volume</div><div class="text-xl font-bold" id="mkVol">-</div><div class="subtle text-xs" id="btcDom">-</div></div>
+          <div class="card p-3"><div class="subtle text-sm">DeFi TVL (CG)</div><div class="text-xl font-bold" id="defiTvl">-</div><div class="subtle text-xs" id="defiNote">-</div></div>
+          <div class="card p-3"><div class="subtle text-sm">Trending</div><div class="text-sm mono scroll h-[54px]" id="trend">-</div></div>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="card p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="font-semibold">Top Assets</div>
+              <button class="btn btn2 text-sm" onclick="chainRefresh()">Refresh</button>
+            </div>
+            <div class="terminal p-2 mono text-xs h-[260px] scroll" id="topCoins">Loading...</div>
+          </div>
+
+          <div class="card p-3">
+            <div class="font-semibold mb-2">Market + Chain Intel (AI)</div>
+            <div class="subtle text-sm mb-2">
+              Snapshots + narratives + risks. We’ll later add on-chain signals + news ingestion.
+            </div>
+            <div class="terminal p-2 mono text-xs h-[260px] scroll" id="intelOut">> Fetching intelligence...</div>
+            <div class="mt-2 flex gap-2 flex-wrap">
+              <button class="btn btn2 text-sm" onclick="intelExplain()">Explain market</button>
+              <button class="btn btnWarn text-sm" onclick="intelRisks()">Risk rules</button>
+              <button class="btn text-sm" onclick="intelNarratives()">Narratives</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="card p-3">
+            <div class="font-semibold mb-2">Top Categories (CG)</div>
+            <div class="terminal p-2 mono text-xs h-[220px] scroll" id="catOut">Loading...</div>
+          </div>
+          <div class="card p-3">
+            <div class="font-semibold mb-2">Top Exchanges (CG)</div>
+            <div class="terminal p-2 mono text-xs h-[220px] scroll" id="exOut">Loading...</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if(id==="wallet") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">👛 Wallets & Verification <span class="pill">under markets</span></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+          <div class="card p-3"><div class="subtle text-sm">Account</div><div class="text-sm" id="acctStatus">-</div></div>
+          <div class="card p-3"><div class="subtle text-sm">Verification</div><div class="text-sm" id="verStatus">-</div></div>
+          <div class="card p-3"><div class="subtle text-sm">Wallets</div><div class="text-sm" id="walletCount">-</div></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="card p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="font-semibold">User Wallets</div>
+              <div class="flex gap-2">
+                <button class="btn" onclick="walletRefresh()">Refresh</button>
+                <button class="btn btnOk" onclick="walletCreate()">Create Wallet</button>
+              </div>
+            </div>
+            <div class="terminal p-2 mono text-xs h-[240px] scroll" id="walletOut">Loading...</div>
+
+            <div class="mt-3 card p-3">
+              <div class="font-semibold mb-2">Verification Steps</div>
+              <ol class="text-sm subtle list-decimal pl-5">
+                <li>Create account</li>
+                <li>Request verification</li>
+                <li>Admin approves</li>
+                <li>Create wallets</li>
+                <li>Trading unlocks (CEX/DEX modules next)</li>
+              </ol>
+              <div class="mt-2 flex gap-2 flex-wrap">
+                <button class="btn btn2 text-sm" onclick="requestVerify()">✅ Request Verification</button>
+                <button class="btn text-sm" onclick="whoami()">Reload Status</button>
+              </div>
+              <div class="subtle text-xs mt-2" id="verifyReqNote">-</div>
+            </div>
+          </div>
+
+          <div class="card p-3">
+            <div class="font-semibold mb-2">Admin Controls</div>
+            <div class="subtle text-sm mb-2">Approve users + freeze/unfreeze wallets.</div>
+
+            <div class="terminal p-2 mono text-xs h-[140px] scroll" id="adminUsersOut">> pending verifications</div>
+            <div class="mt-2 flex gap-2 flex-wrap">
+              <button class="btn btn2 text-sm" onclick="adminPending()">Pending Requests</button>
+              <button class="btn text-sm" onclick="adminUsersAll()">All Users</button>
+            </div>
+
+            <div class="mt-3 terminal p-2 mono text-xs h-[140px] scroll" id="adminWalletOut">> wallets</div>
+            <div class="mt-2 flex gap-2 flex-wrap">
+              <button class="btn text-sm" onclick="adminWallets()">List Wallets</button>
+              <button class="btn btnWarn text-sm" onclick="adminFreezePrompt()">Freeze/Unfreeze</button>
+            </div>
+
+            <div class="mt-3 subtle text-xs">
+              Admin actions require admin login (SOVEREIGN_ADMIN_USER / PASS).
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if(id==="trade") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">📈 Trading <span class="pill">paper now • dex/cex later</span></div>
+        <div class="subtle text-sm mb-2">
+          Paper trading is active. Next: connect CEX (ccxt) + DEX routing (0x / 1inch / Jupiter). We’ll gate advanced trading behind verification.
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="card p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="font-semibold">Price Feed</div>
+              <div class="flex gap-2">
+                <button class="btn" onclick="tradeRefresh()">Refresh</button>
+                <button class="btn btn2" onclick="tradePlan()">Ask AI strategy</button>
+              </div>
+            </div>
+            <div class="terminal p-2 mono text-xs h-[260px] scroll" id="tradePrices">Loading...</div>
+          </div>
+
+          <div class="card p-3">
+            <div class="font-semibold mb-2">Paper Orders</div>
+            <div class="flex gap-2 mb-2">
+              <input class="w-1/3 bg-black/20 border border-white/10 rounded-xl p-2 mono text-sm" id="ordSymbol" placeholder="BTC" value="BTC"/>
+              <input class="w-1/3 bg-black/20 border border-white/10 rounded-xl p-2 mono text-sm" id="ordSide" placeholder="BUY/SELL" value="BUY"/>
+              <input class="w-1/3 bg-black/20 border border-white/10 rounded-xl p-2 mono text-sm" id="ordQty" placeholder="Qty" value="0.01"/>
+            </div>
+            <button class="btn btnOk text-sm" onclick="placePaper()">Place Paper Order</button>
+            <div class="terminal p-2 mono text-xs h-[220px] scroll mt-2" id="paperOut">> paper ledger</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if(id==="social") return `
+      <div class="card h-full">
+        <div class="section-title mb-2">👥 Social Platforms <span class="pill">community</span></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="card p-3">
+            <div class="font-semibold mb-2">Add / Update</div>
+            <div class="flex gap-2 mb-2">
+              <input class="w-1/3 bg-black/20 border border-white/10 rounded-xl p-2 mono text-sm" id="socPlat" placeholder="twitter"/>
+              <input class="w-2/3 bg-black/20 border border-white/10 rounded-xl p-2 mono text-sm" id="socUrl" placeholder="https://..."/>
+            </div>
+            <button class="btn btn2 text-sm" onclick="socialAdd()">Add</button>
+          </div>
+          <div class="card p-3">
+            <div class="font-semibold mb-2">Your Links</div>
+            <div class="terminal p-2 mono text-xs h-[180px] scroll" id="socOut">Loading...</div>
+            <button class="btn text-sm mt-2" onclick="socialRefresh()">Refresh</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return `<div class="card h-full"><div class="section-title mb-2">${esc(id)}</div></div>`;
+  }
+
+  function buildGrid(layout){
+    const el = qs(".grid-stack");
+    el.innerHTML = "";
+
+    grid = GridStack.init({
+      float: true,
+      cellHeight: 78,
+      margin: 10,
+      disableOneColumnMode: false,
+      draggable: {handle: ".section-title"},
+      resizable: {handles: "e, se, s, sw, w"}
+    }, el);
+
+    layout.forEach(w => {
+      const node = document.createElement("div");
+      node.className = "grid-stack-item";
+      node.setAttribute("gs-id", w.id);
+      node.setAttribute("gs-x", w.x);
+      node.setAttribute("gs-y", w.y);
+      node.setAttribute("gs-w", w.w);
+      node.setAttribute("gs-h", w.h);
+      node.innerHTML = `<div class="grid-stack-item-content gs-item-content">${widgetHTML(w.id)}</div>`;
+      el.appendChild(node);
+    });
+
+    grid.load(layout);
+    grid.enableMove(editMode);
+    grid.enableResize(editMode);
+
+    // initial pulls
+    chainRefresh();
+    walletRefresh();
+    socialRefresh();
+    tradeRefresh();
+    repoStatus();
+    fsList();
+    logRefresh();
+    whoami();
+  }
+
+  function currentLayout(){
+    const items = [];
+    grid.engine.nodes.forEach(n => items.push({id: n.el.getAttribute("gs-id"), x:n.x, y:n.y, w:n.w, h:n.h}));
+    items.sort((a,b)=> (a.y-b.y) || (a.x-b.x));
+    return items;
+  }
+
+  function toggleEdit(){
+    editMode = !editMode;
+    grid.enableMove(editMode);
+    grid.enableResize(editMode);
+    qs("#editBtn").textContent = editMode ? "🔧 Layout: Editable" : "🔧 Layout: Locked";
+  }
+
+  async function saveLayout(){
+    const layout = currentLayout();
+    await fetch("/api/layout/save", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({layout})});
+    toast("Layout saved");
+  }
+
+  async function resetLayout(){
+    await fetch("/api/layout/reset", {method:"POST"});
+    buildGrid(DEFAULT_LAYOUT);
+    toast("Layout reset");
+  }
+
+  function toast(msg){
+    const out = qs("#logOut");
+    if(out) out.textContent += `\n> ${msg}`;
+  }
+
+  async function logout(){
+    await fetch("/logout", {method:"POST"});
+    location.href = "/login";
+  }
+
+  // sockets
+  socket.on("system_update", (data) => {
+    if(qs("#cpuPct")) qs("#cpuPct").textContent = `${data.cpu_percent ?? 0}%`;
+    if(qs("#memPct")) qs("#memPct").textContent = `${data.mem_percent ?? 0}%`;
+    if(qs("#diskPct")) qs("#diskPct").textContent = `${data.disk_percent ?? 0}%`;
+    if(qs("#procCnt")) qs("#procCnt").textContent = `${data.proc_count ?? 0}`;
+    if(qs("#netStats")) qs("#netStats").textContent = `net sent=${data.net?.bytes_sent ?? 0} recv=${data.net?.bytes_recv ?? 0}`;
+  });
+
+  socket.on("log_push", (rec) => {
+    const out = qs("#logOut");
+    if(!out) return;
+    out.textContent += `\n> [${rec.level}] ${rec.msg}`;
+    out.scrollTop = out.scrollHeight;
+  });
+
+  socket.on("global_chat", (m) => {
+    const out = qs("#gcOut");
+    if(!out) return;
+    out.textContent += `\n${m.ts} ${m.user}: ${m.text}`;
+    out.scrollTop = out.scrollHeight;
+  });
+
+  // AI
+  async function aiSend(){
+    const inp = qs("#aiIn");
+    const out = qs("#aiOut");
+    const text = (inp.value || "").trim();
+    if(!text) return;
+    out.textContent += `\n> you: ${text}`;
+    inp.value = "";
+    const r = await fetch("/api/ai/chat", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt:text})});
+    const j = await r.json();
+    out.textContent += `\n> ai: ${j.response}`;
+    out.scrollTop = out.scrollHeight;
+  }
+
+  // chat
+  async function gcSend(){
+    const inp = qs("#gcIn");
+    const text = (inp.value || "").trim();
+    if(!text) return;
+    inp.value = "";
+    socket.emit("global_chat_send", {text});
+  }
+
+  // Telegram panel
+  async function tbotPing(){
+    const r = await fetch("/api/tbot/ping");
+    const j = await r.json();
+    qs("#tbotStatus").textContent = j.status || "unknown";
+    qs("#tbotOut").textContent += `\n> ${JSON.stringify(j)}`;
+  }
+  function tbotHowTo(){
+    qs("#tbotOut").textContent += `\n> WebApp Steps:
+> 1) Host dashboard at HTTPS (ex: https://8x8org.youware.app)
+> 2) Run bot (bot/telegram_webapp_bot.py)
+> 3) In Telegram open bot and press "Open Dashboard"
+> Note: local 127.0.0.1 won't work inside Telegram.
+`;
+  }
+
+  // terminal
+  async function termRun(){
+    const inp = qs("#termIn");
+    const out = qs("#termOut");
+    const cmd = (inp.value||"").trim();
+    if(!cmd) return;
+    inp.value = "";
+    out.textContent += `\n$ ${cmd}`;
+    const r = await fetch("/api/terminal/exec", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({cmd})});
+    const j = await r.json();
+    if(j.error){
+      out.textContent += `\n! ${j.error}`;
+    } else {
+      if(j.stdout) out.textContent += `\n${j.stdout}`;
+      if(j.stderr) out.textContent += `\n${j.stderr}`;
+      out.textContent += `\n(rc=${j.returncode}, ${j.elapsed_ms}ms)`;
+      fsList(); repoStatus(); logRefresh();
+    }
+    out.scrollTop = out.scrollHeight;
+  }
+
+  // files
+  async function fsList(){
+    const path = (qs("#fsPath")?.value || ".").trim();
+    const r = await fetch("/api/fs/list?path=" + encodeURIComponent(path));
+    const j = await r.json();
+    const out = qs("#fsOut");
+    if(j.error){ out.textContent = `> error: ${j.error}`; return; }
+    out.textContent = `> ${j.cwd}\n`;
+    j.items.forEach(it => out.textContent += `${it.type==="dir" ? "📁" : "📄"} ${it.name}  (${it.size} bytes)\n`);
+  }
+  function fsUp(){
+    const inp = qs("#fsPath");
+    const p = (inp.value||".").replace(/\/+$/,"");
+    if(p === "." || p === "") { inp.value = "."; fsList(); return; }
+    const parts = p.split("/").filter(Boolean);
+    parts.pop();
+    inp.value = parts.length ? parts.join("/") : ".";
+    fsList();
+  }
+
+  // logs
+  async function logRefresh(){
+    const r = await fetch("/api/logs/tail?lines=180");
+    const j = await r.json();
+    const out = qs("#logOut");
+    if(j.error){ out.textContent = `> error: ${j.error}`; return; }
+    out.textContent = j.lines.join("\n");
+    out.scrollTop = out.scrollHeight;
+  }
+  function logClearView(){ qs("#logOut").textContent = "> cleared"; }
+
+  // repo
+  async function repoStatus(){
+    const r = await fetch("/api/repo/status");
+    const j = await r.json();
+    qs("#repoOut").textContent = j.text || JSON.stringify(j);
+  }
+  async function repoTree(){
+    const r = await fetch("/api/fs/list?path=.");
+    const j = await r.json();
+    qs("#repoOut").textContent = JSON.stringify(j, null, 2);
+  }
+
+  // chain intel (enriched)
+  async function chainRefresh(){
+    const r = await fetch("/api/chain/intel");
+    const j = await r.json();
+    if(j.error) return;
+
+    const g = j.overview?.global?.data || {};
+    qs("#mkCap").textContent = "$" + fmtUSD(g.total_market_cap?.usd);
+    qs("#mkVol").textContent = "$" + fmtUSD(g.total_volume?.usd);
+    qs("#mkCapChg").textContent = `MC 24h: ${Number(g.market_cap_change_percentage_24h_usd || 0).toFixed(2)}%`;
+    qs("#btcDom").textContent = `BTC dom: ${Number(g.market_cap_percentage?.btc || 0).toFixed(2)}%`;
+
+    const trendCoins = (j.overview?.trending?.coins || []).slice(0, 7).map(c => c.item?.name).filter(Boolean);
+    qs("#trend").textContent = trendCoins.length ? trendCoins.join(", ") : "-";
+
+    const defi = j.defi?.data || {};
+    const tvl = defi.defi_market_cap ?? null;
+    qs("#defiTvl").textContent = tvl ? "$" + fmtUSD(tvl) : "-";
+    qs("#defiNote").textContent = "source: CoinGecko DeFi";
+
+    const top = (j.overview?.top || []);
+    let txt = "";
+    top.forEach(c => {
+      txt += `${c.market_cap_rank}. ${String(c.symbol||"").toUpperCase()}  $${c.current_price}  24h:${(c.price_change_percentage_24h||0).toFixed(2)}%  mc:$${fmtUSD(c.market_cap)}\n`;
+    });
+    qs("#topCoins").textContent = txt || "No data";
+
+    const cats = (j.categories || []).slice(0, 12);
+    qs("#catOut").textContent = cats.map(c => {
+      const mc = c.market_cap ?? null;
+      const ch = c.market_cap_change_24h ?? null;
+      return `- ${c.name}  mc:$${fmtUSD(mc)}  24h:${(Number(ch||0)).toFixed(2)}%`;
+    }).join("\n") || "> no categories";
+
+    const ex = (j.exchanges || []).slice(0, 12);
+    qs("#exOut").textContent = ex.map(e => `- ${e.name}  trust_rank:${e.trust_score_rank}  vol24h_btc:${e.trade_volume_24h_btc?.toFixed?.(2) ?? e.trade_volume_24h_btc}`).join("\n") || "> no exchanges";
+
+    qs("#intelOut").textContent =
+`> Market snapshot:
+> Total MC: $${fmtUSD(g.total_market_cap?.usd)}
+> 24h Vol: $${fmtUSD(g.total_volume?.usd)}
+> BTC Dom: ${(g.market_cap_percentage?.btc||0).toFixed(2)}%
+> DeFi: $${fmtUSD(tvl)}
+> Use buttons for AI narratives + risk rules.`;
+  }
+
+  async function intelExplain(){
+    const seed = qs("#intelOut").textContent.slice(-1400);
+    const r = await fetch("/api/ai/chat", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+      prompt: "Explain this crypto market snapshot and what to watch next (no financial advice):\n" + seed
+    })});
+    const j = await r.json();
+    qs("#intelOut").textContent += `\n\n> AI: ${j.response}`;
+  }
+  async function intelRisks(){
+    const r = await fetch("/api/ai/chat", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+      prompt: "Write strict risk rules for crypto users: volatility, custody, scams, leverage, on-chain approvals. Give 10 rules."
+    })});
+    const j = await r.json();
+    qs("#intelOut").textContent += `\n\n> AI: ${j.response}`;
+  }
+  async function intelNarratives(){
+    const seed = (qs("#topCoins").textContent + "\n" + qs("#catOut").textContent).slice(-1800);
+    const r = await fetch("/api/ai/chat", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+      prompt: "From this data, propose top narratives + sectors (no hype), and how to validate them:\n" + seed
+    })});
+    const j = await r.json();
+    qs("#intelOut").textContent += `\n\n> AI: ${j.response}`;
+  }
+
+  // wallet / verification
+  async function whoami(){
+    const r = await fetch("/api/me");
+    const j = await r.json();
+    qs("#whoamiPill").textContent = j.username ? `@${j.username}` : "guest";
+    qs("#verifyPill").textContent = j.is_verified ? "verified" : "unverified";
+    qs("#acctStatus").textContent = j.username ? `@${j.username}` : "-";
+    qs("#verStatus").textContent = j.is_verified ? "✅ Verified" : "⏳ Pending (request admin approval)";
+  }
+
+  async function walletRefresh(){
+    const r = await fetch("/api/wallet/list");
+    const j = await r.json();
+    const out = qs("#walletOut");
+    if(j.error){ out.textContent = `> error: ${j.error}`; return; }
+    qs("#walletCount").textContent = `${(j.wallets||[]).length}`;
+    out.textContent = "> Your wallets:\n";
+    (j.wallets||[]).forEach(w => out.textContent += `- #${w.id} ${w.chain} ${w.address} frozen=${w.is_frozen}\n`);
+    if(!(j.wallets||[]).length) out.textContent += "- none\n";
+    whoami();
+  }
+
+  async function requestVerify(){
+    const r = await fetch("/api/verify/request", {method:"POST"});
+    const j = await r.json();
+    qs("#verifyReqNote").textContent = j.ok ? "✅ Verification request sent to admin." : ("❌ " + (j.error||"failed"));
+    toast("Verification request submitted");
+  }
+
+  async function walletCreate(){
+    const chain = prompt("Chain? (eth/btc)","eth");
+    if(!chain) return;
+    const r = await fetch("/api/wallet/create", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({chain})});
+    const j = await r.json();
+    if(j.error) alert(j.error);
+    walletRefresh(); logRefresh();
+  }
+
+  // admin (buttons, no prompts for approval list)
+  async function adminPending(){
+    const r = await fetch("/api/admin/pending_verifications");
+    const j = await r.json();
+    if(j.error){ qs("#adminUsersOut").textContent = "error: " + j.error; return; }
+
+    let txt = "> pending:\n";
+    (j.items||[]).forEach(u => {
+      txt += `- uid=${u.id} @${u.username} requested_at=${u.requested_at}\n`;
+    });
+    txt += "\n> Approve by clicking an ID below in UI (buttons).";
+    qs("#adminUsersOut").textContent = txt;
+
+    // render quick approve buttons
+    const containerId = "adminApproveBtns";
+    let container = document.getElementById(containerId);
+    if(!container){
+      container = document.createElement("div");
+      container.id = containerId;
+      container.className = "mt-2 flex flex-wrap gap-2";
+      qs("#adminUsersOut").parentElement.appendChild(container);
+    }
+    container.innerHTML = "";
+    (j.items||[]).slice(0,10).forEach(u => {
+      const b = document.createElement("button");
+      b.className = "btn btnOk text-sm";
+      b.textContent = "Approve " + u.id;
+      b.onclick = async () => {
+        await fetch("/api/admin/verify_user", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id:u.id, verified:true})});
+        toast("Approved user " + u.id);
+        adminPending();
+      };
+      container.appendChild(b);
+    });
+  }
+
+  async function adminUsersAll(){
+    const r = await fetch("/api/admin/users");
+    const j = await r.json();
+    qs("#adminUsersOut").textContent = JSON.stringify(j, null, 2);
+  }
+
+  async function adminWallets(){
+    const r = await fetch("/api/admin/wallets");
+    const j = await r.json();
+    qs("#adminWalletOut").textContent = JSON.stringify(j, null, 2);
+  }
+
+  async function adminFreezePrompt(){
+    const wid = prompt("wallet_id?","");
+    if(!wid) return;
+    const action = prompt("Type freeze or unfreeze","freeze");
+    await fetch("/api/admin/wallet_freeze", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({wallet_id:Number(wid), frozen: action==="freeze"})});
+    toast("Wallet updated");
+    adminWallets();
+    walletRefresh();
+  }
+
+  // trading
+  let paperLedger = [];
+  async function tradeRefresh(){
+    const r = await fetch("/api/chain/prices");
+    const j = await r.json();
+    const out = qs("#tradePrices");
+    if(j.error){ out.textContent = `> error: ${j.error}`; return; }
+    let txt = "> Prices (USD):\n";
+    (j.items||[]).forEach(p => txt += `- ${p.symbol}: $${p.price}  24h:${p.chg24h}%\n`);
+    out.textContent = txt;
+  }
+  async function tradePlan(){
+    const snap = qs("#tradePrices").textContent.slice(-1400);
+    const r = await fetch("/api/ai/chat", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+      prompt: "Create a conservative paper-trading plan from this snapshot (no financial advice). Include risk controls:\n" + snap
+    })});
+    const j = await r.json();
+    qs("#paperOut").textContent += `\n> AI Plan: ${j.response}\n`;
+  }
+  function placePaper(){
+    const sym = (qs("#ordSymbol").value||"").toUpperCase().trim();
+    const side = (qs("#ordSide").value||"BUY").toUpperCase().trim();
+    const qty = (qs("#ordQty").value||"").trim();
+    const rec = {ts:new Date().toISOString(), sym, side, qty};
+    paperLedger.push(rec);
+    qs("#paperOut").textContent = "> paper ledger\n" + paperLedger.map(x => `${x.ts} ${x.side} ${x.qty} ${x.sym}`).join("\n");
+  }
+
+  // social
+  async function socialRefresh(){
+    const r = await fetch("/api/social/list");
+    const j = await r.json();
+    const out = qs("#socOut");
+    if(j.error){ out.textContent = `> error: ${j.error}`; return; }
+    out.textContent = "> links:\n";
+    (j.links||[]).forEach(l => out.textContent += `- ${l.platform}: ${l.url}\n`);
+    if(!(j.links||[]).length) out.textContent += "- none\n";
+  }
+  async function socialAdd(){
+    const platform = (qs("#socPlat").value||"").trim();
+    const url = (qs("#socUrl").value||"").trim();
+    if(!platform || !url) return alert("platform + url required");
+    await fetch("/api/social/add", {method:"POST", headers:{'Content-Type':'application/json'}, body: JSON.stringify({platform, url})});
+    qs("#socPlat").value = ""; qs("#socUrl").value = "";
+    socialRefresh();
+  }
+
+  async function init(){
+    const r = await fetch("/api/layout/load");
+    const j = await r.json();
+    buildGrid((j.layout && j.layout.length) ? j.layout : DEFAULT_LAYOUT);
+  }
+  init();
+</script>
+</body>
+</html>
