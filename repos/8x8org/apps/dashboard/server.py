@@ -22,13 +22,6 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
-try:
-try:
-try:
-    import psutil
-except Exception:
-    psutil = None
-
 except Exception:
     psutil = None
 
@@ -41,6 +34,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit
 
+# Optional psutil (Replit/Termux safe)
 APP_NAME = "Sovereign Dashboard"
 APP_VERSION = "4.0.1-portable"
 
