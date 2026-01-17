@@ -250,148 +250,83 @@ def fetch_json(url: str, timeout: float = 10.0) -> Any:
     r.raise_for_status()
     return r.json()
 
+
 def system_status():
-
-    """
-
-    Best-effort system status for Termux/Android.
-
-    Never raises (Termux can block /proc/stat and /proc/net).
-
-    Returns BOTH nested and flat fields (backward + dashboard JS compatible).
-
-    """
-
+    "
+    Termux/Android may block /proc/stat and /proc/net.
+    This must NEVER raise. Returns best-effort stats.
+    Provides BOTH:
+      - nested keys used by home(): st['cpu']['percent'], st['mem']['percent'], ...
+      - flat keys used by sockets: st['cpu_percent'], st['mem_percent'], ...
+    "
     import os, shutil, time
 
     st = {
-
         "app": {
-
             "name": os.getenv("APP_NAME", "Sovereign Dashboard"),
-
             "version": os.getenv("APP_VERSION", "4.0.1-portable"),
-
+            "ts": time.time(),
         },
-
         "time_utc": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),
-
         "warnings": [],
-
-
-
-        # flat fields (used by sockets + new dashboard template)
-
-        "cpu_percent": None,
-
-        "mem_percent": None,
-
-        "disk_percent": None,
-
-        "proc_count": None,
-
-        "net": {"bytes_sent": None, "bytes_recv": None},
-
-
-
-        # nested fields (older home() html expects these)
-
-        "cpu": {"percent": None},
-
-        "mem": {"percent": None, "total": None, "available": None},
-
-        "disk": {"percent": None, "total": None, "free": None},
-
     }
 
+    # Defaults (nested)
+    st["cpu"]  = {"percent": None}
+    st["mem"]  = {"percent": None}
+    st["disk"] = {"percent": None}
+    st["proc"] = {"count": None}
+    st["net"]  = {"bytes_sent": None, "bytes_recv": None}
 
+    # Defaults (flat)
+    st["cpu_percent"]  = None
+    st["mem_percent"]  = None
+    st["disk_percent"] = None
+    st["proc_count"]   = None
 
     # CPU
-
     try:
-
-        pct = psutil.cpu_percent(interval=0.0)
-
-        st["cpu_percent"] = pct
-
-        st["cpu"]["percent"] = pct
-
+        v = psutil.cpu_percent(interval=0.0)
+        st["cpu"]["percent"] = v
+        st["cpu_percent"] = v
     except Exception as e:
-
-        st["warnings"].append("cpu:" + type(e).__name__)
-
-
+        st["warnings"].append(f"cpu:{type(e).__name__}")
 
     # Memory
-
     try:
-
-        vm = psutil.virtual_memory()
-
-        st["mem_percent"] = vm.percent
-
-        st["mem"]["percent"] = vm.percent
-
-        st["mem"]["total"] = int(getattr(vm, "total", 0) or 0)
-
-        st["mem"]["available"] = int(getattr(vm, "available", 0) or 0)
-
+        v = psutil.virtual_memory().percent
+        st["mem"]["percent"] = v
+        st["mem_percent"] = v
     except Exception as e:
+        st["warnings"].append(f"mem:{type(e).__name__}")
 
-        st["warnings"].append("mem:" + type(e).__name__)
-
-
-
-    # Disk (use shutil: works better on Android)
-
+    # Disk (prefer shutil on Android)
     try:
-
-        du = shutil.disk_usage(os.getcwd())
-
-        dp = round((1 - (du.free / du.total)) * 100, 1) if du.total else None
-
-        st["disk_percent"] = dp
-
-        st["disk"]["percent"] = dp
-
-        st["disk"]["total"] = int(du.total)
-
-        st["disk"]["free"] = int(du.free)
-
+        base = os.getcwd()
+        du = shutil.disk_usage(base)
+        v = round((1 - (du.free / du.total)) * 100, 1) if du.total else None
+        st["disk"]["percent"] = v
+        st["disk_percent"] = v
     except Exception as e:
+        st["warnings"].append(f"disk:{type(e).__name__}")
 
-        st["warnings"].append("disk:" + type(e).__name__)
-
-
-
-    # Process count
-
+    # Processes
     try:
-
-        st["proc_count"] = len(psutil.pids())
-
+        v = len(psutil.pids())
+        st["proc"]["count"] = v
+        st["proc_count"] = v
     except Exception as e:
-
-        st["warnings"].append("proc:" + type(e).__name__)
-
-
+        st["warnings"].append(f"proc:{type(e).__name__}")
 
     # Net
-
     try:
-
         nio = psutil.net_io_counters()
-
-        st["net"] = {"bytes_sent": int(nio.bytes_sent), "bytes_recv": int(nio.bytes_recv)}
-
+        st["net"]["bytes_sent"] = int(nio.bytes_sent)
+        st["net"]["bytes_recv"] = int(nio.bytes_recv)
     except Exception as e:
-
-        st["warnings"].append("net:" + type(e).__name__)
-
-
+        st["warnings"].append(f"net:{type(e).__name__}")
 
     return st
-
 
 
 def create_app() -> Tuple[Flask, SocketIO]:

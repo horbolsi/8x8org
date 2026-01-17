@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>{{app_name}} • v{{app_version}}</title>
+  <title>{{app_name}} � v{{app_version}}</title>
 
   <!-- Telegram WebApp bridge (safe even if opened in normal browser) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -88,26 +88,26 @@
     <div class="wrap">
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between py-3">
         <div class="flex items-center gap-3 flex-wrap">
-          <div class="text-2xl font-extrabold">🧊 8x8org</div>
-          <div class="pill">Dashboard • {{app_version}}</div>
+          <div class="text-2xl font-extrabold"> 8x8org</div>
+          <div class="pill">Dashboard � {{app_version}}</div>
           <div class="pill" id="whoamiPill">guest</div>
           <div class="pill" id="verifyPill">unverified</div>
           <div class="pill" id="tgPill" style="display:none;">tg</div>
-          <div class="pill">MANUAL EDIT ✅</div>
+          <div class="pill">MANUAL EDIT </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <button class="btn" onclick="toggleEdit()" id="editBtn">🔧 Layout: Locked</button>
-          <button class="btn" onclick="saveLayout()">💾 Save Layout</button>
-          <button class="btn" onclick="resetLayout()">↩ Reset</button>
-          <button class="btn btn2" onclick="quickJump('chainintel')">⛓ Jump: Markets</button>
-          <button class="btn btn2" onclick="quickJump('terminal')">🧩 Jump: Terminal</button>
-          <button class="btn" onclick="logout()">🚪 Logout</button>
+          <button class="btn" onclick="toggleEdit()" id="editBtn"> Layout: Locked</button>
+          <button class="btn" onclick="saveLayout()"> Save Layout</button>
+          <button class="btn" onclick="resetLayout()"> Reset</button>
+          <button class="btn btn2" onclick="quickJump('chainintel')"> Jump: Markets</button>
+          <button class="btn btn2" onclick="quickJump('terminal')"> Jump: Terminal</button>
+          <button class="btn" onclick="logout()"> Logout</button>
         </div>
       </div>
 
       <div class="subtle text-xs pb-2" id="topHint">
-        Secure terminal allowlist • sandboxed file ops • unlimited scroll • Telegram WebApp ready.
+        Secure terminal allowlist � sandboxed file ops � unlimited scroll � Telegram WebApp ready.
       </div>
     </div>
   </div>
@@ -116,7 +116,7 @@
     <div class="grid-stack"></div>
 
     <footer class="mt-4 subtle text-xs">
-      Tip: Telegram WebApp requires a public HTTPS URL. Local 127.0.0.1 won't load inside Telegram.
+      Tip: Telegram WebApp requires a public HTTPS URL. Local 127.0.0.1 won�t load inside Telegram.
     </footer>
   </div>
 
@@ -195,7 +195,7 @@
       }
 
       applyTelegramTheme();
-      safeText("#topHint", "Telegram WebApp mode • safe-area enabled • polling sockets • mobile-friendly controls.");
+      safeText("#topHint", "Telegram WebApp mode � safe-area enabled � polling sockets � mobile-friendly controls.");
     }catch(e){
       console.warn("Telegram init failed:", e);
     }
@@ -249,19 +249,21 @@
   function widgetHTML(id){
     if(id==="ai") return `
       <div class="card h-full">
-        <div class="section-title mb-2">🧠 AI Console <span class="pill">top</span></div>
+        <div class="section-title mb-2"> AI Console <span class="pill">top</span></div>
         <div class="terminal p-3 h-[260px] scroll mono text-sm" id="aiOut">> Sovereign AI ready.</div>
         <div class="mt-2 flex gap-2">
           <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono" id="aiIn" placeholder="Ask for code, debugging, market intel..." />
           <button class="btn btn2" onclick="aiSend()">Send</button>
         </div>
-        <div class="mt-2 subtle text-xs">Tip: Press Enter to send.</div>
+        <div class="mt-2 subtle text-xs">
+          Tip: Press Enter to send.
+        </div>
       </div>
     `;
 
     if(id==="sys") return `
       <div class="card h-full">
-        <div class="section-title mb-2">📊 System Resources <span class="pill">top-right</span></div>
+        <div class="section-title mb-2"> System Resources <span class="pill">top-right</span></div>
         <div class="grid grid-cols-2 gap-2 text-sm">
           <div class="card p-3"><div class="subtle">CPU</div><div class="text-2xl font-bold" id="cpuPct">0%</div></div>
           <div class="card p-3"><div class="subtle">Memory</div><div class="text-2xl font-bold" id="memPct">0%</div></div>
@@ -274,7 +276,7 @@
 
     if(id==="gchat") return `
       <div class="card h-full">
-        <div class="section-title mb-2">🌐 Global Chat <span class="pill">between sys & bot</span></div>
+        <div class="section-title mb-2"> Global Chat <span class="pill">between sys & bot</span></div>
         <div class="terminal p-3 h-[220px] scroll mono text-sm" id="gcOut">> Connected.</div>
         <div class="mt-2 flex gap-2">
           <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono" id="gcIn" placeholder="Say hi..." />
@@ -285,7 +287,7 @@
 
     if(id==="tbot") return `
       <div class="card h-full">
-        <div class="section-title mb-2">🤖 Telegram Bot WebApp <span class="pill">control plane</span></div>
+        <div class="section-title mb-2"> Telegram Bot WebApp <span class="pill">control plane</span></div>
         <div class="subtle text-sm">
           This panel checks configuration & shows WebApp steps. (Bot runs as separate process.)
         </div>
@@ -297,8 +299,8 @@
           </div>
 
           <div class="mt-2 grid grid-cols-2 gap-2">
-            <button class="btn" onclick="tbotPing()">🔍 Ping</button>
-            <button class="btn btn2" onclick="tbotHowTo()">🧩 WebApp Steps</button>
+            <button class="btn" onclick="tbotPing()"> Ping</button>
+            <button class="btn btn2" onclick="tbotHowTo()"> WebApp Steps</button>
           </div>
 
           <div class="mt-2 terminal p-2 mono text-xs h-[140px] scroll" id="tbotOut">> not connected</div>
@@ -308,19 +310,21 @@
 
     if(id==="terminal") return `
       <div class="card h-full">
-        <div class="section-title mb-2">🧩 Terminal <span class="pill">sandbox</span></div>
+        <div class="section-title mb-2"> Terminal <span class="pill">sandbox</span></div>
         <div class="terminal p-3 h-[240px] scroll mono text-sm" id="termOut">> cwd: workspace</div>
         <div class="mt-2 flex gap-2">
           <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono" id="termIn" placeholder="Allowed: ls, cat, git, python, pip (no pipes/redirection)" />
           <button class="btn btn2" onclick="termRun()">Run</button>
         </div>
-        <div class="mt-2 subtle text-xs">Tip: Press Enter to run.</div>
+        <div class="mt-2 subtle text-xs">
+          Tip: Press Enter to run.
+        </div>
       </div>
     `;
 
     if(id==="files") return `
       <div class="card h-full">
-        <div class="section-title mb-2">📁 File System <span class="pill">under terminal</span></div>
+        <div class="section-title mb-2"> File System <span class="pill">under terminal</span></div>
         <div class="flex gap-2 mb-2">
           <input class="w-full bg-black/20 border border-white/10 rounded-xl p-2 mono text-sm" id="fsPath" value="." />
           <button class="btn" onclick="fsList()">Go</button>
@@ -332,7 +336,7 @@
 
     if(id==="logs") return `
       <div class="card h-full">
-        <div class="section-title mb-2">🧾 Logs <span class="pill">under filesystem</span></div>
+        <div class="section-title mb-2"> Logs <span class="pill">under filesystem</span></div>
         <div class="terminal p-2 mono text-xs h-[300px] scroll" id="logOut">> logs</div>
         <div class="mt-2 flex gap-2">
           <button class="btn" onclick="logRefresh()">Refresh</button>
@@ -343,7 +347,7 @@
 
     if(id==="repo") return `
       <div class="card h-full">
-        <div class="section-title mb-2">🗂 Repo <span class="pill">status</span></div>
+        <div class="section-title mb-2"> Repo <span class="pill">status</span></div>
         <div class="terminal p-2 mono text-xs h-[220px] scroll" id="repoOut">> repo status</div>
         <div class="mt-2 flex gap-2">
           <button class="btn" onclick="repoStatus()">git status</button>
@@ -354,7 +358,7 @@
 
     if(id==="chainintel") return `
       <div class="card h-full">
-        <div class="section-title mb-2">⛓️ Blockchain Intelligence <span class="pill">enriched</span></div>
+        <div class="section-title mb-2"> Blockchain Intelligence <span class="pill">enriched</span></div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
           <div class="card p-3"><div class="subtle text-sm">Global Market Cap</div><div class="text-xl font-bold" id="mkCap">-</div><div class="subtle text-xs" id="mkCapChg">-</div></div>
@@ -375,7 +379,7 @@
           <div class="card p-3">
             <div class="font-semibold mb-2">Market + Chain Intel (AI)</div>
             <div class="subtle text-sm mb-2">
-              Snapshots + narratives + risks. We'll later add on-chain signals + news ingestion.
+              Snapshots + narratives + risks. We�ll later add on-chain signals + news ingestion.
             </div>
             <div class="terminal p-2 mono text-xs h-[260px] scroll" id="intelOut">> Fetching intelligence...</div>
             <div class="mt-2 flex gap-2 flex-wrap">
@@ -401,7 +405,7 @@
 
     if(id==="wallet") return `
       <div class="card h-full">
-        <div class="section-title mb-2">👛 Wallets & Verification <span class="pill">under markets</span></div>
+        <div class="section-title mb-2"> Wallets & Verification <span class="pill">under markets</span></div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
           <div class="card p-3"><div class="subtle text-sm">Account</div><div class="text-sm" id="acctStatus">-</div></div>
           <div class="card p-3"><div class="subtle text-sm">Verification</div><div class="text-sm" id="verStatus">-</div></div>
@@ -429,7 +433,7 @@
                 <li>Trading unlocks (CEX/DEX modules next)</li>
               </ol>
               <div class="mt-2 flex gap-2 flex-wrap">
-                <button class="btn btn2 text-sm" onclick="requestVerify()">✅ Request Verification</button>
+                <button class="btn btn2 text-sm" onclick="requestVerify()"> Request Verification</button>
                 <button class="btn text-sm" onclick="whoami()">Reload Status</button>
               </div>
               <div class="subtle text-xs mt-2" id="verifyReqNote">-</div>
@@ -462,9 +466,9 @@
 
     if(id==="trade") return `
       <div class="card h-full">
-        <div class="section-title mb-2">📈 Trading <span class="pill">paper now • dex/cex later</span></div>
+        <div class="section-title mb-2"> Trading <span class="pill">paper now � dex/cex later</span></div>
         <div class="subtle text-sm mb-2">
-          Paper trading is active. Next: connect CEX (ccxt) + DEX routing (0x / 1inch / Jupiter). We'll gate advanced trading behind verification.
+          Paper trading is active. Next: connect CEX (ccxt) + DEX routing (0x / 1inch / Jupiter). We�ll gate advanced trading behind verification.
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -495,7 +499,7 @@
 
     if(id==="social") return `
       <div class="card h-full">
-        <div class="section-title mb-2">👥 Social Platforms <span class="pill">community</span></div>
+        <div class="section-title mb-2"> Social Platforms <span class="pill">community</span></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="card p-3">
             <div class="font-semibold mb-2">Add / Update</div>
@@ -574,7 +578,7 @@
       grid.enableMove(editMode);
       grid.enableResize(editMode);
     }
-    safeText("#editBtn", editMode ? "🔧 Layout: Editable" : "🔧 Layout: Locked");
+    safeText("#editBtn", editMode ? " Layout: Editable" : " Layout: Locked");
   }
 
   async function saveLayout(){
@@ -697,7 +701,7 @@
     if(!out) return;
     if(j.error){ out.textContent = `> error: ${j.error}`; return; }
     out.textContent = `> ${j.cwd}\n`;
-    (j.items||[]).forEach(it => out.textContent += `${it.type==="dir" ? "📁" : "📄"} ${it.name}  (${it.size} bytes)\n`);
+    (j.items||[]).forEach(it => out.textContent += `${it.type==="dir" ? "" : ""} ${it.name}  (${it.size} bytes)\n`);
   }
 
   function fsUp(){
@@ -809,11 +813,12 @@
   async function whoami(){
     const r = await fetch("/api/me");
     const j = await r.json();
+    // If server gives username use it, otherwise keep Telegram user label if any.
     const fallback = (TG ? (qs("#whoamiPill")?.textContent || "tg-user") : "guest");
     safeText("#whoamiPill", j.username ? `@${j.username}` : fallback);
     safeText("#verifyPill", j.is_verified ? "verified" : "unverified");
     safeText("#acctStatus", j.username ? `@${j.username}` : "-");
-    safeText("#verStatus", j.is_verified ? "✅ Verified" : "⏳ Pending (request admin approval)");
+    safeText("#verStatus", j.is_verified ? " Verified" : " Pending (request admin approval)");
   }
 
   async function walletRefresh(){
@@ -832,7 +837,7 @@
   async function requestVerify(){
     const r = await fetch("/api/verify/request", {method:"POST"});
     const j = await r.json();
-    safeText("#verifyReqNote", j.ok ? "✅ Verification request sent to admin." : ("❌ " + (j.error||"failed")));
+    safeText("#verifyReqNote", j.ok ? " Verification request sent to admin." : (" " + (j.error||"failed")));
     toast("Verification request submitted");
   }
 
