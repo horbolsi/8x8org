@@ -53,5 +53,4 @@ env = {
 [env]
 PROMPT_COMMAND = "source /home/runner/workspace/repos/8x8org/scripts/shellrc.sh >/dev/null 2>&1"
 REPLIT_BASHRC="/home/runner/workspace/repos/8x8org/scripts/replit_bashrc.sh"
-BASH_ENV = "/home/runner/workspace/repos/8x8org/scripts/shellrc.sh"
 PATH = "/home/runner/workspace/repos/8x8org/bin:$PATH"
