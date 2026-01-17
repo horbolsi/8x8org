@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default (Cyber) */
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  --secondary: #8b5cf6;
+  --accent: #10b981;
+  --bg-deep: #030712;
+  --bg-surface: #111827;
+}
+
+:root[data-theme='matrix'] {
+  --primary: #10b981;
+  --primary-glow: rgba(16, 185, 129, 0.4);
+  --secondary: #059669;
+  --accent: #34d399;
+  --bg-deep: #020617;
+}
+
+:root[data-theme='cyber'] {
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  --secondary: #8b5cf6;
+  --accent: #f472b6;
+  --bg-deep: #030712;
+}
+
+:root[data-theme='dark'] {
+  --primary: #3b82f6;
+  --primary-glow: rgba(59, 130, 246, 0.4);
+  --secondary: #60a5fa;
+  --accent: #93c5fd;
+  --bg-deep: #000000;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: #f3f4f6;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.5s ease;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Premium Effects */
+.matrix-bg {
+  background-image: 
+    radial-gradient(circle at 50% 0%, var(--primary-glow), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: background-image 0.5s ease;
+}
+
+.glass-panel {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  background: rgba(17, 24, 39, 0.8);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.2), 
+    0 4px 6px -2px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #374151 transparent;
+}

@@ -1,0 +1,11 @@
+# Patch notes:
+# - Replaces templates/sovereign_full.html with the YouWare-built SPA shell (Vite dist/index.html)
+# - Adds dist assets under apps/dashboard/static/assets/
+# - Requires server.py to serve /assets/* from that static folder and render the template on "/"
+#
+# Server.py changes (manual):
+#   1) ensure Flask app has static_folder='apps/dashboard/static' (or wherever your static dir is)
+#   2) add route:
+#        @app.get("/assets/<path:filename>")
+#        def assets(filename): return send_from_directory(STATIC_ASSETS_DIR, filename)
+#   3) home route returns render_template("sovereign_full.html", app_name=..., app_version=...)

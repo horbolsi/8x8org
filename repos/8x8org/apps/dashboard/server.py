@@ -34,6 +34,14 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory, Blueprint, render_template
 from flask_socketio import SocketIO, emit
 
+# Legacy full dashboard (pre-YouWare SPA) served at /legacy
+legacy_bp = Blueprint("legacy", __name__)
+
+@legacy_bp.get("/legacy")
+def legacy_dashboard():
+    return render_template("sovereign_full_legacy.html")
+
+
 # Vite/YouWare build assets
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'static', 'assets')
 
@@ -347,6 +355,10 @@ def system_status():
 
 def create_app() -> Tuple[Flask, SocketIO]:
     app = Flask(__name__)
+    app.register_blueprint(legacy_bp)
+
+# Legacy full dashboard (pre-YouWare SPA)
+
     app.register_blueprint(assets_bp)
 
     # --- ensure create_app returns (app, socketio) ---
@@ -408,3 +420,23 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# --- PATCH064: routes helper (idempotent) ---
+def register_patch064_routes(app):
+    """Ensure root and /assets for the SPA without breaking existing routes."""
+    from pathlib import Path
+    assets_dir = Path(__file__).resolve().parent / 'static' / 'assets'
+
+    has_assets = any(r.rule.startswith('/assets/') for r in app.url_map.iter_rules())
+    if not has_assets:
+        @app.get('/assets/<path:filename>')
+        def patch064_assets(filename):
+            return send_from_directory(str(assets_dir), filename)
+
+    has_root = any(r.rule == '/' for r in app.url_map.iter_rules())
+    if not has_root:
+        @app.get('/')
+        def patch064_root():
+            return render_template('sovereign_full.html')
+
