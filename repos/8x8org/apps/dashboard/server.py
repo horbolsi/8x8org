@@ -31,8 +31,19 @@ except ImportError:
 import requests
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory, Blueprint, render_template
 from flask_socketio import SocketIO, emit
+
+# Vite/YouWare build assets
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'static', 'assets')
+
+assets_bp = Blueprint("assets_bp", __name__)
+
+@assets_bp.get("/assets/<path:filename>")
+def serve_assets(filename):
+    return send_from_directory(ASSETS_DIR, filename)
+
+
 
 APP_NAME = "Sovereign Dashboard"
 APP_VERSION = "4.0.1-portable"
@@ -336,74 +347,23 @@ def system_status():
 
 def create_app() -> Tuple[Flask, SocketIO]:
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "sovereign-dev-secret")
-    socketio = SocketIO(app, cors_allowed_origins="*")
+    app.register_blueprint(assets_bp)
 
+    # --- ensure create_app returns (app, socketio) ---
+
+    # Home page
     @app.get("/")
-    def home() -> str:
-        st = system_status()
-        return f"""
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>{APP_NAME}</title>
-    <style>
-      body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 20px; }}
-      code, pre {{ background: #f4f4f4; padding: 4px 6px; border-radius: 6px; }}
-      .card {{ border: 1px solid #eee; border-radius: 12px; padding: 14px; margin: 12px 0; }}
-    </style>
-  </head>
-  <body>
-    <h1>{APP_NAME}</h1>
-    <div class="card">
-      <div><b>Version:</b> {st["app"]["version"]}</div>
-      <div><b>Time (UTC):</b> {st["time_utc"]}</div>
-      <div><b>CPU:</b> {st["cpu_percent"]}%</div>
-      <div><b>RAM:</b> {st["mem"]["percent"]}%</div>
-      <div><b>Disk:</b> {st["disk"]["percent"]}%</div>
-    </div>
-
-    <div class="card">
-      <div><b>API</b></div>
-      <div><a href="/api/status">/api/status</a></div>
-      <div><a href="/api/logs">/api/logs</a></div>
-    </div>
-
-    <div class="card">
-      <div><b>Paths</b></div>
-      <div>Workspace: <code>{_workspace_root()}</code></div>
-      <div>DB: <code>{_db_path()}</code></div>
-      <div>Logs: <code>{_log_path()}</code></div>
-    </div>
-  </body>
-</html>
-"""
-
-    @app.get("/api/status")
-    def api_status():
-        return jsonify(system_status())
-
-    @app.get("/api/logs")
-    def api_logs():
-        n = int(request.args.get("n", "200"))
+    def home():
+        # Prefer the YouWare/Vite template; fallback to legacy
         try:
-            txt = _log_path().read_text(encoding="utf-8", errors="ignore")
-            lines = txt.splitlines()[-n:]
-            return jsonify({"path": str(_log_path()), "lines": lines})
-        except Exception as e:
-            return jsonify({"path": str(_log_path()), "error": str(e), "lines": []}), 200
+            return render_template("sovereign_full.html")
+        except Exception:
+            return render_template("dashboard.html")
 
-    @socketio.on("connect")
-    def _on_connect():
-        emit("status", system_status())
+    return app, locals().get('socketio')
 
-    @socketio.on("ping")
-    def _on_ping(data):
-        emit("pong", {"ok": True, "echo": data, "time_utc": utc_now_iso()})
 
-    return app, socketio
+
 
 
 def main() -> None:
@@ -435,7 +395,12 @@ def main() -> None:
     log_line("INFO", f"   URL: http://{host}:{port}")
 
     try:
-        socketio.run(app, host=host, port=port, debug=False)
+        # SocketIO may be unavailable on some platforms (Termux/Replit)
+        if socketio is None:
+            app.run(host=host, port=port, debug=False)
+        else:
+            socketio.run(app, host=host, port=port, debug=False)
+
     except Exception:
         log_line("ERROR", "Server crashed:\n" + traceback.format_exc())
         raise
