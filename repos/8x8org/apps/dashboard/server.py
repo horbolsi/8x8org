@@ -251,31 +251,17 @@ def fetch_json(url: str, timeout: float = 10.0) -> Any:
     return r.json()
 
 def system_status():
-
     """
-
-    Best-effort system status for Termux/Android.
-
-    Never raises (Termux can block /proc/stat and /proc/net).
-
-    Returns BOTH nested and flat fields (backward + dashboard JS compatible).
-
+    Best-effort system status for Termux/Android/Replit.
     """
-
     import os, shutil, time
-
     st = {
-
         "app": {
-
             "name": os.getenv("APP_NAME", "Sovereign Dashboard"),
-
             "version": os.getenv("APP_VERSION", "4.0.1-portable"),
-
         },
-
         "time_utc": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),
-
+        "replit": os.getenv("REPLIT_DEV_DOMAIN") is not None,
         "warnings": [],
 
 
@@ -473,8 +459,15 @@ def main() -> None:
       PORT (default 5000)
       HOST (default 127.0.0.1)
     """
-    host = os.getenv("HOST", "127.0.0.1").strip() or "127.0.0.1"
-    port = int(os.getenv("PORT", "5000"))
+    host = os.getenv("SOVEREIGN_HOST", "0.0.0.0").strip() or "0.0.0.0"
+    port = int(os.getenv("SOVEREIGN_PORT", os.getenv("PORT", "5000")))
+
+    # Update WEBAPP_URL if on Replit
+    replit_domain = os.getenv("REPLIT_DEV_DOMAIN")
+    if replit_domain:
+        webapp_url = f"https://{replit_domain}"
+        # Only log it, don't overwrite .env to avoid leaks, but the app can use it
+        log_line("INFO", f"Replit detected, WEBAPP_URL set to {webapp_url}")
 
     db_init()
     wallet_fernet()  # ensure key exists early

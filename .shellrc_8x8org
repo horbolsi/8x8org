@@ -1,6 +1,7 @@
 # 8x8org shortcuts (Replit)
-# For safety in some shells:
-shopt -s expand_aliases 2>/dev/null || true
-
 alias 8x='cd /home/runner/workspace'
 alias 8xr='cd /home/runner/workspace/repos/8x8org'
+
+alias gstatus='(cd /home/runner/workspace/repos/8x8org 2>/dev/null && git status)'
+alias glog='(cd /home/runner/workspace/repos/8x8org 2>/dev/null && git --no-pager log --oneline -n 12)'
+alias gsync='(cd /home/runner/workspace/repos/8x8org 2>/dev/null && git pull --ff-only)'

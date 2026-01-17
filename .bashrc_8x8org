@@ -1,0 +1,15 @@
+# Replit rc wrapper for 8x8org
+# Avoid recursion:
+if [ -z "${__8X8ORG_RC_LOADED:-}" ]; then
+  export __8X8ORG_RC_LOADED=1
+
+  # Load the original Replit rc if provided:
+  if [ -n "${REPLIT_BASHRC_ORIG:-}" ] && [ -f "${REPLIT_BASHRC_ORIG:-}" ]; then
+    source "$REPLIT_BASHRC_ORIG"
+  fi
+
+  # Load our shortcuts:
+  if [ -f /home/runner/workspace/.shellrc_8x8org ]; then
+    source /home/runner/workspace/.shellrc_8x8org
+  fi
+fi
