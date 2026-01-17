@@ -1,0 +1,16 @@
+# 8x8 shortcuts (shared)
+
+# Replit paths
+if [ -d "/home/runner/workspace" ]; then
+  alias 8x='cd /home/runner/workspace'
+  alias 8xr='cd /home/runner/workspace/repos/8x8org'
+fi
+
+# Termux paths
+if [ -d "/storage/emulated/0/Workspace" ]; then
+  alias 8x='cd /storage/emulated/0/Workspace'
+  alias 8xr='cd /storage/emulated/0/Workspace/repos/8x8org'
+elif [ -d "$HOME/storage/shared/Workspace" ]; then
+  alias 8x='cd "$HOME/storage/shared/Workspace"'
+  alias 8xr='cd "$HOME/storage/shared/Workspace/repos/8x8org"'
+fi

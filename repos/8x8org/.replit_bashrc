@@ -1,0 +1,4 @@
+# Replit interactive shell init
+if [ -f /home/runner/workspace/repos/8x8org/.shellrc ]; then
+  . /home/runner/workspace/repos/8x8org/.shellrc
+fi

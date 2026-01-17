@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+cd /home/runner/workspace/repos/8x8org || exit 1
+exec bash
