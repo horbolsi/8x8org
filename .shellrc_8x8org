@@ -1,0 +1,8 @@
+# --- 8x8 shortcuts (workspace-wide) ---
+8x(){ cd /home/runner/workspace || return; }
+8xr(){ cd /home/runner/workspace/repos/8x8org || return; }
+
+# Source repo helpers if present
+if [ -f /home/runner/workspace/repos/8x8org/scripts/shellrc.sh ]; then
+  . /home/runner/workspace/repos/8x8org/scripts/shellrc.sh
+fi
