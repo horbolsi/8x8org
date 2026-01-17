@@ -38,3 +38,18 @@ __pycache__/
 apps/dashboard/*.bak_*
 apps/dashboard/templates/*.bak_*
 *.bak_bytes
+
+# --- local backups / artifacts ---
+*.bak
+*.bak_*
+*.bak_bytes
+*.tar.gz
+*.pid
+*.log
+*.db
+__pycache__/
+*.pyc
+
+# Sovereign runtime
+projects/sovereign_ai_master/logs/
+projects/sovereign_ai_master/*.db
