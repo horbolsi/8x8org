@@ -33,3 +33,8 @@ __pycache__/
 
 # local secrets
 .env
+
+# local backups
+apps/dashboard/*.bak_*
+apps/dashboard/templates/*.bak_*
+*.bak_bytes
