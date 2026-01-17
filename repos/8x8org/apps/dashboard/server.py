@@ -22,10 +22,10 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
-except Exception:
-    psutil = None
 
-except Exception:
+try:
+    import psutil
+except ImportError:
     psutil = None
 
 import requests
@@ -34,7 +34,6 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit
 
-# Optional psutil (Replit/Termux safe)
 APP_NAME = "Sovereign Dashboard"
 APP_VERSION = "4.0.1-portable"
 
@@ -247,13 +246,17 @@ def cache_set(key: str, data: Any) -> None:
 
 
 def fetch_json(url: str, timeout: float = 10.0) -> Any:
-    r = requests.get(
-        url,
-        timeout=timeout,
-        headers={"User-Agent": f"{APP_NAME}/{APP_VERSION}"},
-    )
-    r.raise_for_status()
-    return r.json()
+    try:
+        r = requests.get(
+            url,
+            timeout=timeout,
+            headers={"User-Agent": f"{APP_NAME}/{APP_VERSION}"},
+        )
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return {}
+
 
 def system_status():
     """
@@ -269,120 +272,66 @@ def system_status():
         "replit": os.getenv("REPLIT_DEV_DOMAIN") is not None,
         "warnings": [],
 
-
-
         # flat fields (used by sockets + new dashboard template)
-
         "cpu_percent": None,
-
         "mem_percent": None,
-
         "disk_percent": None,
-
         "proc_count": None,
-
         "net": {"bytes_sent": None, "bytes_recv": None},
 
-
-
         # nested fields (older home() html expects these)
-
         "cpu": {"percent": None},
-
         "mem": {"percent": None, "total": None, "available": None},
-
         "disk": {"percent": None, "total": None, "free": None},
-
     }
 
-
-
     # CPU
-
-    try:
-
-        pct = psutil.cpu_percent(interval=0.0)
-
-        st["cpu_percent"] = pct
-
-        st["cpu"]["percent"] = pct
-
-    except Exception as e:
-
-        st["warnings"].append("cpu:" + type(e).__name__)
-
-
+    if psutil:
+        try:
+            pct = psutil.cpu_percent(interval=0.0)
+            st["cpu_percent"] = pct
+            st["cpu"]["percent"] = pct
+        except Exception as e:
+            st["warnings"].append("cpu:" + type(e).__name__)
 
     # Memory
-
-    try:
-
-        vm = psutil.virtual_memory()
-
-        st["mem_percent"] = vm.percent
-
-        st["mem"]["percent"] = vm.percent
-
-        st["mem"]["total"] = int(getattr(vm, "total", 0) or 0)
-
-        st["mem"]["available"] = int(getattr(vm, "available", 0) or 0)
-
-    except Exception as e:
-
-        st["warnings"].append("mem:" + type(e).__name__)
-
-
+    if psutil:
+        try:
+            vm = psutil.virtual_memory()
+            st["mem_percent"] = vm.percent
+            st["mem"]["percent"] = vm.percent
+            st["mem"]["total"] = int(getattr(vm, "total", 0) or 0)
+            st["mem"]["available"] = int(getattr(vm, "available", 0) or 0)
+        except Exception as e:
+            st["warnings"].append("mem:" + type(e).__name__)
 
     # Disk (use shutil: works better on Android)
-
     try:
-
         du = shutil.disk_usage(os.getcwd())
-
         dp = round((1 - (du.free / du.total)) * 100, 1) if du.total else None
-
         st["disk_percent"] = dp
-
         st["disk"]["percent"] = dp
-
         st["disk"]["total"] = int(du.total)
-
         st["disk"]["free"] = int(du.free)
-
     except Exception as e:
-
         st["warnings"].append("disk:" + type(e).__name__)
 
-
-
     # Process count
-
-    try:
-
-        st["proc_count"] = len(psutil.pids())
-
-    except Exception as e:
-
-        st["warnings"].append("proc:" + type(e).__name__)
-
-
+    if psutil:
+        try:
+            st["proc_count"] = len(psutil.pids())
+        except Exception as e:
+            st["warnings"].append("proc:" + type(e).__name__)
 
     # Net
-
-    try:
-
-        nio = psutil.net_io_counters()
-
-        st["net"] = {"bytes_sent": int(nio.bytes_sent), "bytes_recv": int(nio.bytes_recv)}
-
-    except Exception as e:
-
-        st["warnings"].append("net:" + type(e).__name__)
-
-
+    if psutil:
+        try:
+            nio = psutil.net_io_counters()
+            st["net"] = {"bytes_sent": int(nio.bytes_sent), "bytes_recv": int(nio.bytes_recv)}
+        except Exception as e:
+            st["warnings"].append("net:" + type(e).__name__)
 
     return st
-
 
 
 def create_app() -> Tuple[Flask, SocketIO]:
