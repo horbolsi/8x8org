@@ -46,10 +46,10 @@ externalPort = 3000
 defaultBucketID = "replit-objstore-cd5137f0-fd65-4fb7-b509-b9413f46358e"
 
 env = {
- PATH = "/home/runner/workspace/repos/8x8org/bin:$PATH",  BASH_ENV = "/home/runner/workspace/repos/8x8org/scripts/shellrc.sh",
   REPLIT_BASHRC = "/home/runner/workspace/.bashrc_8x8org",
   REPLIT_BASHRC_ORIG = "/nix/store/lsgsb0ar7rdwa09d1z2dnfjh4188pddk-replit-bashrc/bashrc",
 }
 
 [env]
+BASH_ENV="/home/runner/workspace/repos/8x8org/scripts/shellrc.sh"
 REPLIT_BASHRC="/home/runner/workspace/repos/8x8org/scripts/replit_bashrc.sh"
