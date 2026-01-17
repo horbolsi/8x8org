@@ -51,5 +51,5 @@ env = {
 }
 
 [env]
-BASH_ENV="/home/runner/workspace/repos/8x8org/scripts/shellrc.sh"
 REPLIT_BASHRC="/home/runner/workspace/repos/8x8org/scripts/replit_bashrc.sh"
+BASH_ENV="/home/runner/workspace/repos/8x8org/scripts/shellrc.sh"

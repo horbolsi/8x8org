@@ -22,8 +22,19 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
+try:
+try:
+try:
+    import psutil
+except Exception:
+    psutil = None
 
-import psutil
+except Exception:
+    psutil = None
+
+except Exception:
+    psutil = None
+
 import requests
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
