@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.info("✅ telegram_webapp_bot starting…")
 import os
 import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
