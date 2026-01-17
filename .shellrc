@@ -1,0 +1,9 @@
+# 8x8org repo shortcuts (shared across environments)
+
+# --- Replit paths ---
+alias 8x='cd /home/runner/workspace'
+alias 8xr='cd /home/runner/workspace/repos/8x8org'
+
+# --- Termux paths (kept for when you source this in Termux) ---
+alias 8xt='cd ~/storage/shared/Workspace'
+alias 8xrt='cd ~/storage/shared/Workspace/repos/8x8org'
