@@ -1,0 +1,28 @@
+FlashTM8 Ultimate Offline AI Options
+===================================
+
+A) Ollama (best if supported)
+----------------------------
+1) Install Ollama on a PC/VPS and expose port 11434 securely
+2) Set in dashboard: OLLAMA_BASE_URL=http://YOUR_SERVER:11434
+3) AI_PROVIDER=auto or ollama
+
+B) Local GGUF on Android (Termux)
+---------------------------------
+This may or may not compile on Termux depending on device/ABI.
+
+1) Download a GGUF model to:
+   /sdcard/models/model.gguf
+
+2) Try install:
+   python -m pip install --user llama-cpp-python
+
+3) Set:
+   LOCAL_MODEL_PATH="/sdcard/models/model.gguf"
+   AI_PROVIDER="auto"
+
+C) “No AI credit / no offline model”
+------------------------------------
+Auto chain falls back safely.
+Index + Search still works, so FlashTM8 stays useful.
+

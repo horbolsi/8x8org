@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>⚡ Sovereign Console</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">⚡ Sovereign Console</div>
+    <div class="status" id="status">Loading...</div>
+  </div>
+
+  <div class="grid">
+    <div class="sidebar">
+      <button class="tabbtn active" data-tab="chat">Chat</button>
+      <button class="tabbtn" data-tab="terminal">Terminal</button>
+      <button class="tabbtn" data-tab="files">Files</button>
+      <button class="tabbtn" data-tab="search">Search</button>
+      <button class="tabbtn" data-tab="logs">Logs</button>
+      <button class="tabbtn" data-tab="monitor">Monitor</button>
+      <button class="tabbtn" data-tab="settings">Settings</button>
+
+      <div class="actions">
+        <button id="btnIndex" class="ghost">Index Workspace</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="panel active" id="tab-chat">
+        <div class="panelTitle">⚡ Chat (Workspace-Aware)</div>
+        <div class="chatbox" id="chatbox"></div>
+        <div class="row">
+          <input id="chatInput" placeholder="Ask anything about your workspace..." />
+          <button id="sendChat">Send</button>
+        </div>
+        <div class="hint">Provider used: <span id="providerUsed">auto</span></div>
+      </div>
+
+      <div class="panel" id="tab-terminal">
+        <div class="panelTitle">🖥 Terminal Exec (safe)</div>
+        <div class="row">
+          <input id="cmdInput" placeholder="ex: ls -la" />
+          <button id="runCmd">Run</button>
+        </div>
+        <pre class="out" id="cmdOut"></pre>
+        <div class="hint">Exec is disabled by default → enable in Settings.</div>
+      </div>
+
+      <div class="panel" id="tab-files">
+        <div class="panelTitle">📁 File Reader</div>
+        <div class="row">
+          <input id="filePath" placeholder="ex: README.md" />
+          <button id="readFile">Read</button>
+        </div>
+        <pre class="out" id="fileOut"></pre>
+      </div>
+
+      <div class="panel" id="tab-search">
+        <div class="panelTitle">🔎 Workspace Search</div>
+        <div class="row">
+          <input id="searchQ" placeholder="ex: TELEGRAM_BOT_TOKEN" />
+          <button id="doSearch">Search</button>
+        </div>
+        <pre class="out" id="searchOut"></pre>
+      </div>
+
+      <div class="panel" id="tab-logs">
+        <div class="panelTitle">📜 Logs</div>
+        <div class="hint">This is the live console log path:</div>
+        <pre class="out" id="logsOut">(Logs appear here after server runs)</pre>
+      </div>
+
+      <div class="panel" id="tab-monitor">
+        <div class="panelTitle">📊 System Monitor</div>
+        <div class="cards">
+          <div class="card"><div class="k">CPU</div><div class="v" id="cpu">-</div></div>
+          <div class="card"><div class="k">Memory</div><div class="v" id="mem">-</div></div>
+          <div class="card"><div class="k">Disk</div><div class="v" id="disk">-</div></div>
+          <div class="card"><div class="k">Free (GB)</div><div class="v" id="free">-</div></div>
+        </div>
+        <button id="refreshMetrics" class="ghost">Refresh</button>
+      </div>
+
+      <div class="panel" id="tab-settings">
+        <div class="panelTitle">⚙ Settings</div>
+
+        <div class="form">
+          <label>AI_PROVIDER</label>
+          <select id="AI_PROVIDER">
+            <option value="auto">auto (local→ollama→cloud→fallback)</option>
+            <option value="llama.cpp">llama.cpp</option>
+            <option value="ollama">ollama</option>
+            <option value="openai">openai</option>
+            <option value="deepseek">deepseek</option>
+            <option value="fallback">fallback</option>
+          </select>
+
+          <label>LLAMA_CPP_URL</label>
+          <input id="LLAMA_CPP_URL" placeholder="http://127.0.0.1:8080" />
+
+          <label>OLLAMA_BASE_URL</label>
+          <input id="OLLAMA_BASE_URL" placeholder="http://127.0.0.1:11434" />
+
+          <label>OPENAI_API_KEY</label>
+          <input id="OPENAI_API_KEY" placeholder="sk-..." />
+
+          <label>GEMINI_API_KEY</label>
+          <input id="GEMINI_API_KEY" placeholder="AIza..." />
+
+          <label>DEEPSEEK_API_KEY</label>
+          <input id="DEEPSEEK_API_KEY" placeholder="sk-..." />
+
+          <label>EXEC_ENABLED</label>
+          <select id="EXEC_ENABLED">
+            <option value="false">false (safe)</option>
+            <option value="true">true (danger)</option>
+          </select>
+
+          <label>WRITE_ENABLED</label>
+          <select id="WRITE_ENABLED">
+            <option value="false">false (safe)</option>
+            <option value="true">true (danger)</option>
+          </select>
+
+          <button id="saveKeys">Save</button>
+          <div class="hint" id="saveMsg"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

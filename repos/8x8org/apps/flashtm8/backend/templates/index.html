@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FlashTM8 ⚡</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="top">
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <div>
+        <div class="title">FlashTM8</div>
+        <div class="sub">AI Sovereign Console • Workspace-Aware Assistant</div>
+      </div>
+    </div>
+    <div class="status" id="status">Loading…</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Tools</h3>
+      <button onclick="health()">Health</button>
+      <button onclick="indexWorkspace()">Index Workspace</button>
+
+      <div class="sep"></div>
+      <h3>Search</h3>
+      <input id="searchQ" placeholder="server port, bot token, run.sh..." />
+      <button onclick="search()">Search</button>
+      <pre id="searchOut" class="out"></pre>
+    </div>
+
+    <div class="card">
+      <h3>Chat</h3>
+      <div class="chat" id="chat"></div>
+
+      <div class="row">
+        <input id="msg" placeholder="Ask about files, bugs, features, next steps..." />
+        <button onclick="send()">Send</button>
+      </div>
+
+      <div class="meta" id="providerMeta"></div>
+    </div>
+
+    <div class="card">
+      <h3>AI Providers + Keys</h3>
+      <div class="hint">Edit here, click Save, restart dashboard if needed.</div>
+
+      <label>AI_PROVIDER</label>
+      <select id="AI_PROVIDER">
+        <option value="auto">auto (offline→ollama→cloud→fallback)</option>
+        <option value="llamacpp">llamacpp (offline)</option>
+        <option value="ollama">ollama</option>
+        <option value="openai">openai</option>
+        <option value="gemini">gemini</option>
+        <option value="deepseek">deepseek</option>
+      </select>
+
+      <label>LOCAL_MODEL_PATH (GGUF)</label>
+      <input id="LOCAL_MODEL_PATH" placeholder="/sdcard/models/your-model.gguf" />
+
+      <label>OLLAMA_BASE_URL</label>
+      <input id="OLLAMA_BASE_URL" placeholder="http://127.0.0.1:11434" />
+
+      <label>OPENAI_API_KEY</label>
+      <input id="OPENAI_API_KEY" placeholder="sk-..." />
+
+      <label>GEMINI_API_KEY</label>
+      <input id="GEMINI_API_KEY" placeholder="AIza..." />
+
+      <label>DEEPSEEK_API_KEY</label>
+      <input id="DEEPSEEK_API_KEY" placeholder="sk-..." />
+
+      <div class="row">
+        <label style="flex:1">EXEC_ENABLED</label>
+        <select id="EXEC_ENABLED">
+          <option value="0">0 (OFF)</option>
+          <option value="1">1 (ON)</option>
+        </select>
+
+        <label style="flex:1">WRITE_ENABLED</label>
+        <select id="WRITE_ENABLED">
+          <option value="0">0 (OFF)</option>
+          <option value="1">1 (ON)</option>
+        </select>
+      </div>
+
+      <button onclick="saveKeys()">Save Keys</button>
+      <pre id="keysOut" class="out"></pre>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

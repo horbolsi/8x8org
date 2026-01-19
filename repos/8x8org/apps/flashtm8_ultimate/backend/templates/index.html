@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>FlashTM8 Ultimate ⚡</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo">⚡ FlashTM8</div>
+        <div class="tag">Ultimate Sovereign Console • Workspace-Aware • Self-Healing</div>
+      </div>
+      <div id="health" class="health">Loading…</div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Tools</h2>
+        <div class="row">
+          <button id="btnIndex">Index Workspace</button>
+          <input id="q" placeholder="Search: run.sh, bot token, port, error..." />
+          <button id="btnSearch">Search</button>
+        </div>
+        <pre id="out" class="out"></pre>
+      </section>
+
+      <section class="card">
+        <h2>Chat</h2>
+        <div id="chatlog" class="chatlog"></div>
+        <div class="row">
+          <input id="msg" placeholder="Ask FlashTM8 about repo, bugs, next steps..." />
+          <button id="btnSend">Send</button>
+        </div>
+        <div id="provider" class="small"></div>
+      </section>
+
+      <section class="card wide">
+        <h2>AI Providers + Keys</h2>
+        <div class="form">
+          <label>AI_PROVIDER <input id="AI_PROVIDER" value="auto"></label>
+          <label>LOCAL_MODEL_PATH (GGUF) <input id="LOCAL_MODEL_PATH" placeholder="/sdcard/models/model.gguf"></label>
+          <label>OLLAMA_BASE_URL <input id="OLLAMA_BASE_URL" value="http://127.0.0.1:11434"></label>
+          <label>OPENAI_API_KEY <input id="OPENAI_API_KEY" placeholder="sk-..."></label>
+          <label>GEMINI_API_KEY <input id="GEMINI_API_KEY" placeholder="AIza..."></label>
+          <label>DEEPSEEK_API_KEY <input id="DEEPSEEK_API_KEY" placeholder="sk-..."></label>
+          <label>XAI_API_KEY <input id="XAI_API_KEY" placeholder="..."></label>
+          <label>EXEC_ENABLED <input id="EXEC_ENABLED" value="0"></label>
+          <label>WRITE_ENABLED <input id="WRITE_ENABLED" value="0"></label>
+        </div>
+        <div class="row">
+          <button id="btnSave">Save Keys</button>
+          <div id="saveMsg" class="small"></div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="foot">
+      FlashTM8 Ultimate • Designed for full sovereign control of 8x8org
+    </footer>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
