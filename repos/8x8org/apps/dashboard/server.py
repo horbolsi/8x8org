@@ -411,7 +411,7 @@ def main() -> None:
         if socketio is None:
             app.run(host=host, port=port, debug=False)
         else:
-            socketio.run(app, host=host, port=port, debug=False)
+            socketio.run(app, host=host, port=int(os.environ.get('PORT','5000')), debug=False)
 
     except Exception:
         log_line("ERROR", "Server crashed:\n" + traceback.format_exc())

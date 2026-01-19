@@ -1,29 +1,18 @@
-#!/data/data/com.termux/files/usr/bin/bash
-set -e
-VENV="${HOME}/.venvs/8x8org"
-if [ -f "$VENV/bin/activate" ]; then
-  . "$VENV/bin/activate"
-fi
-cd "$(dirname "$0")/.."
+#!/usr/bin/env bash
+PORT="${PORT:-5000}"
+export PORT
+echo "✅ Using PORT=$PORT"
+set -euo pipefail
 
-set -Eeuo pipefail
+# Always run from repo root (works on Replit + Termux)
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 
-export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+# Use PORT if provided (Replit sets this)
+export HOST="${HOST:-0.0.0.0}"
 
-REPO="$HOME/storage/shared/Workspace/repos/8x8org"
-VENV="$HOME/.venvs/8x8org"
+echo "✅ Repo: $ROOT"
+echo "✅ Starting dashboard on $HOST:$PORT"
+echo "➡️  http://$HOST:$PORT"
 
-cd "$REPO"
-
-if [ ! -d "$VENV" ]; then
-  mkdir -p "$HOME/.venvs"
-  python -m venv "$VENV"
-fi
-
-source "$VENV/bin/activate"
-pip -q install -r requirements.txt
-
-source scripts/env.sh
-mkdir -p "$SOVEREIGN_WORKSPACE" "$SOVEREIGN_LOG_DIR"
-
-python app/dashboard.py
+python sovereign_dashboard_full.py
